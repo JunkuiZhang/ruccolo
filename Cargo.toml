@@ -15,3 +15,6 @@ lto = true
 codegen-units = 1
 
 [dependencies]
+winit = "*"
+wgpu = "*"
+pollster = "*"
