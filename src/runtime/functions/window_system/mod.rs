@@ -14,6 +14,7 @@ impl WindowManager {
             // .with_fullscreen(Some(winit::window::Fullscreen::Borderless(None)))
             .build(event_loop)
             .unwrap();
+
         WindowManager { window }
     }
 }

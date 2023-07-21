@@ -37,9 +37,9 @@ pub fn run() {
         },
         winit::event::Event::MainEventsCleared => {
             fps_manager.tick();
-            if fps_manager.last_update.elapsed().as_millis() > 1000 {
-                println!("FPS: {}", fps_manager.get_fps());
+            if fps_manager.last_update.elapsed().as_millis() >= 1000 {
                 fps_manager.update(std::time::Instant::now());
+                println!("FPS: {}", fps_manager.get_fps());
             }
             render_manager.tick();
         }
