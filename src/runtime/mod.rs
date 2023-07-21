@@ -1,3 +1,5 @@
+use crate::runtime::functions::render_system::fps_manager;
+
 use self::functions::{render_system::RenderManager, window_system::WindowManager};
 
 mod core;
@@ -11,6 +13,7 @@ pub fn run() {
     let event_loop = winit::event_loop::EventLoop::new();
     let window_manager = WindowManager::new(&event_loop);
     let render_manager = pollster::block_on(RenderManager::new(&window_manager.window));
+    let mut fps_manager = fps_manager::FpsManager::new();
 
     event_loop.run(move |event, _, control_flow| match event {
         winit::event::Event::WindowEvent { event, .. } => match event {
@@ -32,6 +35,14 @@ pub fn run() {
             },
             _ => {}
         },
+        winit::event::Event::MainEventsCleared => {
+            fps_manager.tick();
+            if fps_manager.last_update.elapsed().as_millis() > 1000 {
+                println!("FPS: {}", fps_manager.get_fps());
+                fps_manager.update(std::time::Instant::now());
+            }
+            render_manager.tick();
+        }
         _ => {}
     });
 }

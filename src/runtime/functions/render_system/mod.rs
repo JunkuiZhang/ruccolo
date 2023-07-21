@@ -1,3 +1,5 @@
+pub mod fps_manager;
+
 use crate::runtime::platforms::gpu::GpuContext;
 
 pub struct RenderManager {
@@ -58,5 +60,41 @@ impl RenderManager {
 
     pub fn report(&self) {
         println!("Report: {:#?}", self.gpu_context.instance.generate_report());
+    }
+
+    pub fn tick(&self) {
+        let frame = self.gpu_context.surface.get_current_texture().unwrap();
+        let view = frame
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        let rp_desc = wgpu::RenderPassDescriptor {
+            label: None,
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: &view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                    store: false,
+                },
+            })],
+            depth_stencil_attachment: None,
+        };
+
+        let mut command_encoder = self
+            .gpu_context
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+        // render pass
+        {
+            let _ = command_encoder.begin_render_pass(&rp_desc);
+        }
+
+        // submit
+        self.gpu_context
+            .queue
+            .submit(Some(command_encoder.finish()));
+
+        frame.present();
     }
 }
