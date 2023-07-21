@@ -6,7 +6,7 @@ impl Editor {
     }
 
     pub fn run(&self) {
-        println!("Editor is running!");
+        log::info!("Engine editor started.");
         crate::runtime::run();
     }
 }

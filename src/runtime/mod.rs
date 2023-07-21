@@ -9,7 +9,7 @@ mod resources;
 mod tools;
 
 pub fn run() {
-    println!("Runtime is running!");
+    log::info!("Engine runtime started.");
     let event_loop = winit::event_loop::EventLoop::new();
     let window_manager = WindowManager::new(&event_loop);
     let render_manager = pollster::block_on(RenderManager::new(&window_manager.window));
