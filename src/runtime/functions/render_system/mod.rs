@@ -8,11 +8,15 @@ pub struct RenderManager {
 
 impl RenderManager {
     pub async fn new(window: &winit::window::Window) -> Self {
+        let dxc_path = std::path::PathBuf::from("./shared");
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::DX12,
-            ..Default::default()
+            dx12_shader_compiler: wgpu::Dx12Compiler::Dxc {
+                dxil_path: Some(dxc_path.clone()),
+                dxc_path: Some(dxc_path),
+            },
         });
-        let surface = unsafe { instance.create_surface(window) }.unwrap();
+        let surface = unsafe { instance.create_surface(window) }.expect("Failed to create surface");
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
@@ -20,7 +24,7 @@ impl RenderManager {
                 compatible_surface: Some(&surface),
             })
             .await
-            .unwrap();
+            .expect("Failed to find an appropriate adapter");
         let surface_capabilities = surface.get_capabilities(&adapter);
         let (device, queue) = adapter
             .request_device(
@@ -32,9 +36,7 @@ impl RenderManager {
                 None,
             )
             .await
-            .unwrap();
-
-        println!("Get adpter: {:#?}", adapter.get_info());
+            .expect("Failed to create device");
 
         let surface_config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -64,9 +66,10 @@ impl RenderManager {
 
     pub fn tick(&self) {
         let frame = self.gpu_context.surface.get_current_texture().unwrap();
-        let view = frame
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
+        let view = frame.texture.create_view(&wgpu::TextureViewDescriptor {
+            // format: Some(self.gpu_context.surface_config.view_formats[0]),
+            ..Default::default()
+        });
         let rp_desc = wgpu::RenderPassDescriptor {
             label: None,
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
