@@ -47,7 +47,8 @@ impl RenderManager {
             format: surface_capabilities.formats[0],
             width: 1280,
             height: 720,
-            present_mode: wgpu::PresentMode::AutoVsync,
+            // present_mode: wgpu::PresentMode::AutoVsync,
+            present_mode: wgpu::PresentMode::AutoNoVsync,
             alpha_mode: wgpu::CompositeAlphaMode::Auto,
             view_formats: vec![surface_capabilities.formats[0]],
         };
@@ -68,6 +69,7 @@ impl RenderManager {
         println!("Report: {:#?}", self.gpu_context.instance.generate_report());
     }
 
+    #[profiling::function]
     pub fn tick(&self) {
         let frame = self.gpu_context.surface.get_current_texture().unwrap();
         let view = frame.texture.create_view(&wgpu::TextureViewDescriptor {

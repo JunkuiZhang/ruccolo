@@ -20,3 +20,13 @@ env_logger = "*"
 winit = "*"
 wgpu = "*"
 pollster = "*"
+profiling = "*"
+tracy-client = "*"
+
+[features]
+default = ["profile-with-tracy"]
+# profile-with-puffin = ["profiling/profile-with-puffin"]
+# profile-with-optick = ["profiling/profile-with-optick"]
+# profile-with-superluminal = ["profiling/profile-with-superluminal"]
+# profile-with-tracing = ["profiling/profile-with-tracing"]
+profile-with-tracy = ["profiling/profile-with-tracy"]

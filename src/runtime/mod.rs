@@ -42,6 +42,7 @@ pub fn run() {
                 println!("FPS: {}", fps_manager.get_fps());
             }
             render_manager.tick();
+            profiling::finish_frame!();
         }
         _ => {}
     });
