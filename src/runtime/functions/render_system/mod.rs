@@ -7,6 +7,7 @@ pub struct RenderManager {
 }
 
 impl RenderManager {
+    #[profiling::function]
     pub async fn new(window: &winit::window::Window) -> Self {
         // let dxc_path = std::path::PathBuf::from("./shared");
         let dxc_path = std::path::PathBuf::from("./shared/dxcompiler.dll");
