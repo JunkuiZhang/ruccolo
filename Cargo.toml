@@ -20,8 +20,8 @@ env_logger = "0.10"
 winit = "0.28"
 wgpu = "0.17"
 pollster = "0.3"
-profiling = "1.0"
-tracy-client = { version = "0.16", optional = true }
+profiling = "1.0.8"
+tracy-client = { version = "0.15", optional = true }
 
 [features]
 default = ["profile-with-tracy"]
