@@ -21,7 +21,7 @@ winit = "*"
 wgpu = "*"
 pollster = "*"
 profiling = "*"
-tracy-client = "*"
+tracy-client = { version = "*", optional = true }
 
 [features]
 default = ["profile-with-tracy"]
@@ -29,4 +29,4 @@ default = ["profile-with-tracy"]
 # profile-with-optick = ["profiling/profile-with-optick"]
 # profile-with-superluminal = ["profiling/profile-with-superluminal"]
 # profile-with-tracing = ["profiling/profile-with-tracing"]
-profile-with-tracy = ["profiling/profile-with-tracy"]
+profile-with-tracy = ["profiling/profile-with-tracy", "dep:tracy-client"]
