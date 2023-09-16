@@ -6,8 +6,8 @@ pub struct RenderManager {
     gpu_context: GpuContext,
 }
 
+#[profiling::all_functions]
 impl RenderManager {
-    #[profiling::function]
     pub async fn new(window: &winit::window::Window) -> Self {
         // let dxc_path = std::path::PathBuf::from("./shared");
         let dxc_path = std::path::PathBuf::from("./shared/dxcompiler.dll");
@@ -70,7 +70,6 @@ impl RenderManager {
         println!("Report: {:#?}", self.gpu_context.instance.generate_report());
     }
 
-    #[profiling::function]
     pub fn tick(&self) {
         let frame = self.gpu_context.surface.get_current_texture().unwrap();
         let view = frame.texture.create_view(&wgpu::TextureViewDescriptor {

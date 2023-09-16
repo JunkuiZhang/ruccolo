@@ -2,8 +2,8 @@ pub struct WindowManager {
     pub window: winit::window::Window,
 }
 
+#[profiling::all_functions]
 impl WindowManager {
-    #[profiling::function]
     pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> Self {
         let window = winit::window::WindowBuilder::new()
             .with_title("Ruccolo Engine")
