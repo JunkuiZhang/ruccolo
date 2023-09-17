@@ -66,6 +66,7 @@ impl RenderManager {
         }
     }
 
+    #[profiling::skip]
     pub fn report(&self) {
         println!("Report: {:#?}", self.gpu_context.instance.generate_report());
     }
