@@ -9,15 +9,11 @@ pub struct RenderManager {
 #[profiling::all_functions]
 impl RenderManager {
     pub async fn new(window: &winit::window::Window) -> Self {
-        // let dxc_path = std::path::PathBuf::from("./shared");
-        let dxc_path = std::path::PathBuf::from("./shared/dxcompiler.dll");
-        let dxil_path = std::path::PathBuf::from("./shared/dxil.dll");
+        let dxc_path = std::path::PathBuf::from("./shared");
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::DX12,
             dx12_shader_compiler: wgpu::Dx12Compiler::Dxc {
-                // dxil_path: Some(dxc_path.clone()),
-                // dxc_path: Some(dxc_path),
-                dxil_path: Some(dxil_path),
+                dxil_path: Some(dxc_path.clone()),
                 dxc_path: Some(dxc_path),
             },
         });
