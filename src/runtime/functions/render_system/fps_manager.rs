@@ -1,7 +1,7 @@
 pub struct FpsManager {
     fps: u32,
     frame_count: u32,
-    pub last_update: std::time::Instant,
+    last_update: std::time::Instant,
 }
 
 impl FpsManager {
@@ -25,5 +25,9 @@ impl FpsManager {
         self.fps = self.frame_count;
         self.frame_count = 0;
         self.last_update = last_update
+    }
+
+    pub fn elapsed(&self) -> f32 {
+        self.last_update.elapsed().as_secs_f32()
     }
 }

@@ -17,6 +17,13 @@ pub fn run() {
     let mut fps_manager = fps_manager::FpsManager::new();
 
     event_loop.run(move |event, _, control_flow| match event {
+        winit::event::Event::NewEvents(_) => {
+            fps_manager.tick();
+            if fps_manager.elapsed() >= 1.0 {
+                fps_manager.update(std::time::Instant::now());
+                println!("FPS: {}", fps_manager.get_fps());
+            }
+        }
         winit::event::Event::WindowEvent { event, .. } => match event {
             winit::event::WindowEvent::CloseRequested => control_flow.set_exit(),
             winit::event::WindowEvent::KeyboardInput {
@@ -37,11 +44,11 @@ pub fn run() {
             _ => {}
         },
         winit::event::Event::MainEventsCleared => {
-            fps_manager.tick();
-            if fps_manager.last_update.elapsed().as_millis() >= 1000 {
-                fps_manager.update(std::time::Instant::now());
-                println!("FPS: {}", fps_manager.get_fps());
-            }
+            // fps_manager.tick();
+            // if fps_manager.last_update.elapsed().as_millis() >= 1000 {
+            //     fps_manager.update(std::time::Instant::now());
+            //     println!("FPS: {}", fps_manager.get_fps());
+            // }
             render_manager.tick();
             profiling::finish_frame!();
         }
