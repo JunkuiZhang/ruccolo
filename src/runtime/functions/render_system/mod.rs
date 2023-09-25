@@ -2,8 +2,11 @@ pub mod fps_manager;
 
 use crate::runtime::platforms::gpu::GpuContext;
 
+use super::scene_system::SceneObject;
+
 pub struct RenderManager {
     gpu_context: GpuContext,
+    pipeline: wgpu::RenderPipeline,
 }
 
 #[profiling::all_functions]
@@ -51,6 +54,55 @@ impl RenderManager {
         };
         surface.configure(&device, &surface_config);
 
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Basic Shader"),
+            source: wgpu::ShaderSource::Wgsl(
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/assets/shaders/basic.wgsl"
+                ))
+                .into(),
+            ),
+        });
+
+        let render_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Render Pipeline Layout"),
+                bind_group_layouts: &[],
+                push_constant_ranges: &[],
+            });
+
+        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: None,
+            layout: Some(&render_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: "vs_main",
+                buffers: &[],
+            },
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: Some(wgpu::Face::Back),
+                unclipped_depth: false,
+                polygon_mode: wgpu::PolygonMode::Fill,
+                conservative: false,
+            },
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState::default(),
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: "fs_main",
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: surface_config.format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            multiview: None,
+        });
+
         RenderManager {
             gpu_context: GpuContext {
                 instance,
@@ -59,6 +111,7 @@ impl RenderManager {
                 surface,
                 surface_config,
             },
+            pipeline,
         }
     }
 
@@ -67,7 +120,7 @@ impl RenderManager {
         println!("Report: {:#?}", self.gpu_context.instance.generate_report());
     }
 
-    pub fn tick(&self, render_queue: &Vec<()>) {
+    pub fn tick(&self, render_queue: &Vec<SceneObject>) {
         let frame = self.gpu_context.surface.get_current_texture().unwrap();
         let view = frame.texture.create_view(&wgpu::TextureViewDescriptor {
             // format: Some(self.gpu_context.surface_config.view_formats[0]),
@@ -93,7 +146,9 @@ impl RenderManager {
 
         // render pass
         {
-            let _ = command_encoder.begin_render_pass(&rp_desc);
+            let mut pass = command_encoder.begin_render_pass(&rp_desc);
+            pass.set_pipeline(&self.pipeline);
+            pass.draw(0..3, 0..1);
         }
 
         // submit
