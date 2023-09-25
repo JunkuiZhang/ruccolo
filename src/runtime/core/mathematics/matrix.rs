@@ -1,5 +1,6 @@
 use super::array::Array;
 
+#[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct Matrix<T, const C: usize>([Array<T>; C]);
 

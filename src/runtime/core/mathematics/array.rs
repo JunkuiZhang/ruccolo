@@ -1,3 +1,4 @@
+#[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct Array<T>(pub [T; 4]);
 
