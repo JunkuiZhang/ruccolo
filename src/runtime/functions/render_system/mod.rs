@@ -67,7 +67,7 @@ impl RenderManager {
         println!("Report: {:#?}", self.gpu_context.instance.generate_report());
     }
 
-    pub fn tick(&self) {
+    pub fn tick(&self, render_queue: &Vec<()>) {
         let frame = self.gpu_context.surface.get_current_texture().unwrap();
         let view = frame.texture.create_view(&wgpu::TextureViewDescriptor {
             // format: Some(self.gpu_context.surface_config.view_formats[0]),

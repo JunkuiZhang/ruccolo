@@ -44,12 +44,7 @@ pub fn run() {
             _ => {}
         },
         winit::event::Event::MainEventsCleared => {
-            // fps_manager.tick();
-            // if fps_manager.last_update.elapsed().as_millis() >= 1000 {
-            //     fps_manager.update(std::time::Instant::now());
-            //     println!("FPS: {}", fps_manager.get_fps());
-            // }
-            render_manager.tick();
+            render_manager.tick(&scene_manager.render_queue);
             profiling::finish_frame!();
         }
         _ => {}
