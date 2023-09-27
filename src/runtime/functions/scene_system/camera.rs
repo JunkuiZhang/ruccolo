@@ -5,6 +5,9 @@ pub struct CameraInfo {
     pub position: Array4,
     pub lookat: Array4,
     pub updir: Array4,
+    fov: f32,
+    // camera pos to camera vision plane
+    distance: f32,
 }
 
 impl Default for CameraInfo {
@@ -13,6 +16,8 @@ impl Default for CameraInfo {
             position: Array4::new([0.0, 0.0, 0.0, 1.0]),
             lookat: Array4::new([0.0, 0.0, -1.0, 0.0]),
             updir: Array4::new([0.0, 1.0, 0.0, 0.0]),
+            fov: 90.0,
+            distance: 5.0,
         }
     }
 }
@@ -39,6 +44,11 @@ impl CameraInfo {
             [0.0, 0.0, 0.0, 1.0],
         ]);
         return rotation_transform * move_transformation;
+    }
+
+    /// Here gives perspective projection matrix.
+    pub fn projection_matrix(&self) -> Matrix4 {
+        todo!()
     }
 }
 
