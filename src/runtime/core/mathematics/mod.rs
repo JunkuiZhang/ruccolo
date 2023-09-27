@@ -6,7 +6,7 @@ pub type Matrix4 = matrix::Matrix<f32, 4>;
 pub type Array4 = array::Array<f32>;
 
 /// Right-hand axis
-pub fn rotate_x(angle: u32) -> Matrix4 {
+pub fn rotate_x(angle: i32) -> Matrix4 {
     // lookat x-minus
     let angle = angle as f32 / 180.0 * PI;
 
@@ -18,7 +18,7 @@ pub fn rotate_x(angle: u32) -> Matrix4 {
     ])
 }
 
-pub fn rotate_y(angle: u32) -> Matrix4 {
+pub fn rotate_y(angle: i32) -> Matrix4 {
     let angle = angle as f32 / 180.0 * PI;
 
     Matrix4::new([
@@ -29,7 +29,7 @@ pub fn rotate_y(angle: u32) -> Matrix4 {
     ])
 }
 
-pub fn rotate_z(angle: u32) -> Matrix4 {
+pub fn rotate_z(angle: i32) -> Matrix4 {
     let angle = angle as f32 / 180.0 * PI;
 
     Matrix4::new([
@@ -40,7 +40,7 @@ pub fn rotate_z(angle: u32) -> Matrix4 {
     ])
 }
 
-pub fn rotate_around(axis: Array4, angle: u32) -> Matrix4 {
+pub fn rotate_around(axis: Array4, angle: i32) -> Matrix4 {
     // 罗德里格斯公式Rodrigues
     // games101:P4 21:10
     let angle = angle as f32 / 180.0 * PI;
@@ -78,7 +78,7 @@ pub fn rotate_around(axis: Array4, angle: u32) -> Matrix4 {
 }
 
 // TODO: 四元数旋转
-pub fn rotate(axis: Array4, angle: u32) -> Matrix4 {
+pub fn rotate(axis: Array4, angle: i32) -> Matrix4 {
     let angle = angle as f32 / 360.0 * PI; // agnle / 2
 
     // https://www.zhihu.com/tardis/zm/art/78987582?source_id=1005
@@ -123,12 +123,64 @@ pub fn cross(x: &Array4, y: &Array4) -> Array4 {
 
 impl Array4 {
     #[allow(dead_code)]
-    fn almost_eq(&self, other: &Self) -> bool {
+    pub fn almost_eq(&self, other: &Self) -> bool {
         for index in 0..4 {
             if !f32_eq(self.0[index], other.0[index]) {
                 return false;
             }
         }
+        return true;
+    }
+
+    pub fn normalize(&mut self) {
+        let mut sum = 0.0;
+        for index in 0..3 {
+            sum += self.0[index] * self.0[index];
+        }
+        sum = sum.sqrt();
+        for index in 0..3 {
+            self.0[index] /= sum;
+        }
+    }
+}
+
+impl Matrix4 {
+    pub fn trans(&self) -> Matrix4 {
+        Matrix4::new([
+            [
+                self.0[0].0[0],
+                self.0[1].0[0],
+                self.0[2].0[0],
+                self.0[3].0[0],
+            ],
+            [
+                self.0[0].0[1],
+                self.0[1].0[1],
+                self.0[2].0[1],
+                self.0[3].0[1],
+            ],
+            [
+                self.0[0].0[2],
+                self.0[1].0[2],
+                self.0[2].0[2],
+                self.0[3].0[2],
+            ],
+            [
+                self.0[0].0[3],
+                self.0[1].0[3],
+                self.0[2].0[3],
+                self.0[3].0[3],
+            ],
+        ])
+    }
+
+    pub fn almost_eq(&self, other: &Matrix4) -> bool {
+        for index in 0..4 {
+            if !self.0[index].almost_eq(&other.0[index]) {
+                return false;
+            }
+        }
+
         return true;
     }
 }
@@ -145,7 +197,57 @@ fn f32_eq(x: f32, y: f32) -> bool {
 
 #[allow(unused_imports)]
 mod test {
-    use super::{cross, rotate, rotate_around, rotate_x, rotate_y, rotate_z, Array4};
+    use super::{cross, rotate, rotate_around, rotate_x, rotate_y, rotate_z, Array4, Matrix4};
+
+    #[test]
+    fn trans_tests() {
+        let a = Matrix4::new([
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
+        let target = Matrix4::new([
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
+        assert!(a.trans().almost_eq(&target));
+
+        let a = Matrix4::new([
+            [1.0, 1.0, 1.0, 1.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
+        let target = Matrix4::new([
+            [1.0, 0.0, 0.0, 0.0],
+            [1.0, 1.0, 0.0, 0.0],
+            [1.0, 0.0, 1.0, 0.0],
+            [1.0, 0.0, 0.0, 1.0],
+        ]);
+        assert!(a.trans().almost_eq(&target));
+
+        let a = rotate_x(45);
+        let target = Matrix4::new([
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
+        let res = a.trans() * a;
+        assert!(res.trans().almost_eq(&target));
+
+        let a = rotate_y(45) * rotate_y(-45);
+        let target = Matrix4::new([
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
+        assert!(a.trans().almost_eq(&target));
+    }
 
     #[test]
     fn rotate_tests() {
@@ -199,6 +301,39 @@ mod test {
         let res = rotate_mat * x;
         let target = Array4::new([0.0, 0.0, -1.0, 0.0]);
         assert!(res.almost_eq(&target), "Rotate #2 {:?}, {:?}", res, target);
+    }
+
+    #[test]
+    fn normalize_tests() {
+        let mut x = Array4::new([1.0, 0.0, 0.0, 0.0]);
+        let target = Array4::new([1.0, 0.0, 0.0, 0.0]);
+        x.normalize();
+        assert!(
+            x.almost_eq(&target),
+            "Normalize tests: {:?}, {:?}",
+            x,
+            target
+        );
+
+        let mut x = Array4::new([1.0, 0.0, 0.0, 1.0]);
+        let target = Array4::new([1.0, 0.0, 0.0, 1.0]);
+        x.normalize();
+        assert!(
+            x.almost_eq(&target),
+            "Normalize tests: {:?}, {:?}",
+            x,
+            target
+        );
+
+        let mut x = Array4::new([10.0, 0.0, 0.0, 1.0]);
+        let target = Array4::new([1.0, 0.0, 0.0, 1.0]);
+        x.normalize();
+        assert!(
+            x.almost_eq(&target),
+            "Normalize tests: {:?}, {:?}",
+            x,
+            target
+        );
     }
 
     #[test]

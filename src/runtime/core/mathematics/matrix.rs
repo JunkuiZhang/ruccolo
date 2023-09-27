@@ -2,12 +2,13 @@ use super::array::Array;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
-pub struct Matrix<T, const C: usize>([Array<T>; C]);
+pub struct Matrix<T, const C: usize>(pub [Array<T>; C]);
 
 impl<T, const C: usize> Matrix<T, C>
 where
     T: Default + Copy,
 {
+    /// ALL COLUMN VECTORS HERE!
     pub fn new(data: [[T; 4]; C]) -> Self {
         let mut inner = [Array::<T>::default(); C];
         for (res, src) in inner.iter_mut().zip(&data) {
