@@ -88,7 +88,7 @@ where
 
 impl<T, const C: usize> PartialEq for Matrix<T, C>
 where
-    T: PartialEq,
+    T: Eq,
 {
     fn eq(&self, other: &Self) -> bool {
         self.0 == other.0

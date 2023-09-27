@@ -12,8 +12,8 @@ pub fn rotate_x(angle: u32) -> Matrix4 {
 
     Matrix4::new([
         [1.0, 0.0, 0.0, 0.0],
-        [0.0, angle.cos(), -angle.sin(), 0.0],
-        [0.0, angle.sin(), angle.cos(), 0.0],
+        [0.0, angle.cos(), angle.sin(), 0.0],
+        [0.0, -angle.sin(), angle.cos(), 0.0],
         [0.0, 0.0, 0.0, 1.0],
     ])
 }
@@ -22,9 +22,9 @@ pub fn rotate_y(angle: u32) -> Matrix4 {
     let angle = angle as f32 / 180.0 * PI;
 
     Matrix4::new([
-        [angle.cos(), 0.0, angle.sin(), 0.0],
+        [angle.cos(), 0.0, -angle.sin(), 0.0],
         [0.0, 1.0, 0.0, 0.0],
-        [-angle.sin(), 0.0, angle.cos(), 0.0],
+        [angle.sin(), 0.0, angle.cos(), 0.0],
         [0.0, 0.0, 0.0, 1.0],
     ])
 }
@@ -33,8 +33,8 @@ pub fn rotate_z(angle: u32) -> Matrix4 {
     let angle = angle as f32 / 180.0 * PI;
 
     Matrix4::new([
-        [angle.cos(), -angle.sin(), 0.0, 0.0],
-        [angle.sin(), angle.cos(), 0.0, 0.0],
+        [angle.cos(), angle.sin(), 0.0, 0.0],
+        [-angle.sin(), angle.cos(), 0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.0, 0.0, 0.0, 1.0],
     ])
@@ -57,19 +57,19 @@ pub fn rotate_around(axis: Array4, angle: u32) -> Matrix4 {
     Matrix4::new([
         [
             cos_a + one_cos_a * x * x,
-            one_cos_a * xy - z * sin_a,
-            one_cos_a * xz + y * sin_a,
-            0.0,
-        ],
-        [
             one_cos_a * xy + z * sin_a,
-            cos_a + one_cos_a * y * y,
-            one_cos_a * yz - x * sin_a,
+            one_cos_a * xz - y * sin_a,
             0.0,
         ],
         [
-            one_cos_a * xz - y * sin_a,
+            one_cos_a * xy - z * sin_a,
+            cos_a + one_cos_a * y * y,
             one_cos_a * yz + x * sin_a,
+            0.0,
+        ],
+        [
+            one_cos_a * xz + y * sin_a,
+            one_cos_a * yz - x * sin_a,
             cos_a + one_cos_a * z * z,
             0.0,
         ],
@@ -92,22 +92,120 @@ pub fn rotate(axis: Array4, angle: u32) -> Matrix4 {
     Matrix4::new([
         [
             1.0 - 2.0 * y * y - 2.0 * z * z,
-            2.0 * x * y - 2.0 * w * z,
-            2.0 * x * z + 2.0 * w * y,
-            0.0,
-        ],
-        [
             2.0 * x * y + 2.0 * w * z,
-            1.0 - 2.0 * x * x - 2.0 * z * z,
-            2.0 * y * z - 2.0 * w * x,
+            2.0 * x * z - 2.0 * w * y,
             0.0,
         ],
         [
-            2.0 * x * z - 2.0 * w * y,
+            2.0 * x * y - 2.0 * w * z,
+            1.0 - 2.0 * x * x - 2.0 * z * z,
             2.0 * y * z + 2.0 * w * x,
+            0.0,
+        ],
+        [
+            2.0 * x * z + 2.0 * w * y,
+            2.0 * y * z - 2.0 * w * x,
             1.0 - 2.0 * x * x - 2.0 * y * y,
             0.0,
         ],
         [0.0, 0.0, 0.0, 1.0],
     ])
+}
+
+pub fn cross(x: &Array4, y: &Array4) -> Array4 {
+    return Array4::new([
+        x.0[1] * y.0[2] - x.0[2] * y.0[1],
+        x.0[2] * y.0[0] - x.0[0] * y.0[2],
+        x.0[0] * y.0[1] - x.0[1] * y.0[0],
+        0.0,
+    ]);
+}
+
+impl Array4 {
+    fn almost_eq(&self, other: &Self) -> bool {
+        for index in 0..4 {
+            if !f32_eq(self.0[index], other.0[index]) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
+fn f32_eq(x: f32, y: f32) -> bool {
+    let diff = if x < y { y - x } else { x - y };
+    if diff < 1e-6 {
+        true
+    } else {
+        false
+    }
+}
+
+mod test {
+    use crate::runtime::core::mathematics::{rotate, rotate_around, rotate_y, rotate_z};
+
+    use super::{cross, rotate_x, Array4};
+
+    #[test]
+    fn rotate_tests() {
+        // rotate_x
+        let x = Array4::new([0.0, 1.0, 0.0, 0.0]);
+        let rotate_mat = rotate_x(90);
+        let res = rotate_mat * x;
+        let target = Array4::new([0.0, 0.0, 1.0, 0.0]);
+        assert!(res.almost_eq(&target), "Rotate x {:?}, {:?}", res, target);
+        // rotate_y
+        let x = Array4::new([0.0, 0.0, 1.0, 0.0]);
+        let rotate_mat = rotate_y(90);
+        let res = rotate_mat * x;
+        let target = Array4::new([1.0, 0.0, 0.0, 0.0]);
+        assert!(res.almost_eq(&target), "Rotate y {:?}, {:?}", res, target);
+        // rotate_z
+        let x = Array4::new([1.0, 0.0, 0.0, 0.0]);
+        let rotate_mat = rotate_z(90);
+        let res = rotate_mat * x;
+        let target = Array4::new([0.0, 1.0, 0.0, 0.0]);
+        assert!(res.almost_eq(&target), "Rotate z {:?}, {:?}", res, target);
+        // rotate_around
+        let x = Array4::new([1.0, 0.0, 0.0, 0.0]);
+        let rotate_mat = rotate_around(Array4::new([0.0, 0.0, 1.0, 0.0]), 90);
+        let res = rotate_mat * x;
+        let target = Array4::new([0.0, 1.0, 0.0, 0.0]);
+        assert!(
+            res.almost_eq(&target),
+            "Rotate around {:?}, {:?}",
+            res,
+            target
+        );
+        // rotate
+        let x = Array4::new([1.0, 0.0, 0.0, 0.0]);
+        let rotate_mat = rotate(Array4::new([0.0, 0.0, 1.0, 0.0]), 90);
+        let res = rotate_mat * x;
+        let target = Array4::new([0.0, 1.0, 0.0, 0.0]);
+        assert!(res.almost_eq(&target), "Rotate {:?}, {:?}", res, target);
+    }
+
+    #[test]
+    fn more_rotate_tests() {
+        let x = Array4::new([1.0, 0.0, 0.0, 0.0]);
+        let rotate_mat = rotate(Array4::new([1.0, 0.0, 0.0, 0.0]), 90);
+        let res = rotate_mat * x;
+        let target = Array4::new([1.0, 0.0, 0.0, 0.0]);
+        assert!(res.almost_eq(&target), "Rotate #1 {:?}, {:?}", res, target);
+
+        let x = Array4::new([1.0, 0.0, 0.0, 0.0]);
+        let rotate_mat = rotate(Array4::new([0.0, 1.0, 0.0, 0.0]), 90);
+        let res = rotate_mat * x;
+        let target = Array4::new([0.0, 0.0, -1.0, 0.0]);
+        assert!(res.almost_eq(&target), "Rotate #2 {:?}, {:?}", res, target);
+    }
+
+    #[test]
+    fn cross_product() {
+        let x = Array4::new([1.0, 0.0, 0.0, 0.0]);
+        let y = Array4::new([0.0, 1.0, 0.0, 0.0]);
+        let res = cross(&x, &y);
+        let target = Array4::new([0.0, 0.0, 1.0, 0.0]);
+        assert!(res.almost_eq(&target));
+    }
 }

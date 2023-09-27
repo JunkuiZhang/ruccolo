@@ -65,7 +65,7 @@ where
 
 impl<T> PartialEq for Array<T>
 where
-    T: PartialEq,
+    T: Eq,
 {
     fn eq(&self, other: &Self) -> bool {
         self.0 == other.0
