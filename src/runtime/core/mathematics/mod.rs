@@ -122,6 +122,7 @@ pub fn cross(x: &Array4, y: &Array4) -> Array4 {
 }
 
 impl Array4 {
+    #[allow(dead_code)]
     fn almost_eq(&self, other: &Self) -> bool {
         for index in 0..4 {
             if !f32_eq(self.0[index], other.0[index]) {
@@ -132,6 +133,7 @@ impl Array4 {
     }
 }
 
+#[allow(dead_code)]
 fn f32_eq(x: f32, y: f32) -> bool {
     let diff = if x < y { y - x } else { x - y };
     if diff < 1e-6 {
@@ -141,10 +143,9 @@ fn f32_eq(x: f32, y: f32) -> bool {
     }
 }
 
+#[allow(unused_imports)]
 mod test {
-    use crate::runtime::core::mathematics::{rotate, rotate_around, rotate_y, rotate_z};
-
-    use super::{cross, rotate_x, Array4};
+    use super::{cross, rotate, rotate_around, rotate_x, rotate_y, rotate_z, Array4};
 
     #[test]
     fn rotate_tests() {

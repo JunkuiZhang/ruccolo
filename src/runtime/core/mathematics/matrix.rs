@@ -95,6 +95,7 @@ where
     }
 }
 
+#[allow(unused_imports)]
 mod test {
     use crate::runtime::core::mathematics::array::Array;
 
