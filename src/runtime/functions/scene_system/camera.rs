@@ -18,7 +18,7 @@ impl Default for CameraInfo {
 }
 
 impl CameraInfo {
-    pub fn get_mvp(&self) -> Matrix4 {
+    pub fn modelview_transform_matrix(&self) -> Matrix4 {
         let mut gt_perp = cross(&self.lookat, &self.updir);
         gt_perp.normalize();
         let move_transformation = Matrix4::new([
@@ -51,7 +51,7 @@ mod test {
     #[test]
     fn camera_test() {
         let camera = CameraInfo::default();
-        let transform = camera.get_mvp();
+        let transform = camera.modelview_transform_matrix();
         let transed_pos = transform * camera.position;
         assert!(transed_pos.almost_eq(&camera.position));
         let transed_lookat = transform * camera.lookat;
@@ -63,7 +63,7 @@ mod test {
         camera.position = Array4::new([10.0, -20.0, 3.0, 1.0]);
         camera.lookat.normalize();
         camera.updir.normalize();
-        let transform = camera.get_mvp();
+        let transform = camera.modelview_transform_matrix();
         let transed_pos = transform * camera.position;
         assert!(transed_pos.almost_eq(&Array4::new([0.0, 0.0, 0.0, 1.0])));
         let transed_lookat = transform * camera.lookat;
