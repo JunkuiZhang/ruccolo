@@ -2,15 +2,14 @@ pub mod fps_manager;
 
 use wgpu::util::DeviceExt;
 
-use crate::runtime::platforms::gpu::GpuContext;
+use crate::runtime::{core::mathematics::Matrix4, platforms::gpu::GpuContext};
 
 use super::scene_system::{camera::CameraInfo, SceneObject};
 
 pub struct RenderManager {
     gpu_context: GpuContext,
     pipeline: wgpu::RenderPipeline,
-    camera_trans_buffer: wgpu::Buffer,
-    camera_bindgroup: wgpu::BindGroup,
+    camera_trans_matrix: Matrix4,
     vertex_buffer: wgpu::Buffer,
 }
 
@@ -44,12 +43,17 @@ impl RenderManager {
             .await
             .expect("Failed to find an appropriate adapter");
         let surface_capabilities = surface.get_capabilities(&adapter);
+        println!("Adapter features: {:#?}", adapter.features());
+        println!("Adapter limitss: {:#?}", adapter.limits());
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: Some("Primary Device"),
-                    features: Default::default(),
-                    limits: Default::default(),
+                    features: wgpu::Features::PUSH_CONSTANTS,
+                    limits: wgpu::Limits {
+                        max_push_constant_size: 64,
+                        ..Default::default()
+                    },
                 },
                 None,
             )
@@ -80,33 +84,6 @@ impl RenderManager {
         });
 
         let camera_uniforms = camera.get_mvp();
-        let camera_trans_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: None,
-            contents: bytemuck::cast_slice(&[camera_uniforms]),
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        });
-        let camera_bindgroup_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: None,
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }],
-            });
-        let camera_bindgroup = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Camera Bindgroup"),
-            layout: &camera_bindgroup_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: camera_trans_buffer.as_entire_binding(),
-            }],
-        });
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
@@ -122,8 +99,11 @@ impl RenderManager {
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&camera_bindgroup_layout],
-                push_constant_ranges: &[],
+                bind_group_layouts: &[],
+                push_constant_ranges: &[wgpu::PushConstantRange {
+                    stages: wgpu::ShaderStages::VERTEX,
+                    range: 0..64,
+                }],
             });
 
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -166,8 +146,7 @@ impl RenderManager {
                 surface_config,
             },
             pipeline,
-            camera_trans_buffer,
-            camera_bindgroup,
+            camera_trans_matrix: camera_uniforms,
             vertex_buffer,
         }
     }
@@ -205,8 +184,12 @@ impl RenderManager {
         {
             let mut pass = command_encoder.begin_render_pass(&rp_desc);
             pass.set_pipeline(&self.pipeline);
+            pass.set_push_constants(
+                wgpu::ShaderStages::VERTEX,
+                0,
+                bytemuck::cast_slice(&[self.camera_trans_matrix]),
+            );
             pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            pass.set_bind_group(0, &self.camera_bindgroup, &[]);
             pass.draw(0..6, 0..1);
             // pass.draw_indexed(indices, 0, 0..1);
         }

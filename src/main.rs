@@ -16,6 +16,6 @@ fn prepare() {
 
     let mut logger = env_logger::Builder::from_default_env();
     logger.target(env_logger::Target::Stdout);
-    logger.filter_level(log::LevelFilter::Info);
+    // logger.filter_level(log::LevelFilter::Info);
     logger.init();
 }
