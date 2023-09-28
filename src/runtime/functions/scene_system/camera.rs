@@ -5,9 +5,12 @@ pub struct CameraInfo {
     pub position: Array4,
     pub lookat: Array4,
     pub updir: Array4,
-    fov: f32,
+    // half the total fov, current is height / 2 / znear
+    fov2: f32,
     // camera pos to camera vision plane
-    distance: f32,
+    znear: f32,
+    zfar: f32,
+    aspect: f32, // width / height ie. 1080 / 1920
 }
 
 impl Default for CameraInfo {
@@ -16,8 +19,9 @@ impl Default for CameraInfo {
             position: Array4::new([0.0, 0.0, 0.0, 1.0]),
             lookat: Array4::new([0.0, 0.0, -1.0, 0.0]),
             updir: Array4::new([0.0, 1.0, 0.0, 0.0]),
-            fov: 90.0,
-            distance: 5.0,
+            fov2: 45.0,
+            znear: 0.5,
+            zfar: 100.0,
         }
     }
 }
