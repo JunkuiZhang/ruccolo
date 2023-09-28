@@ -185,6 +185,11 @@ impl Matrix4 {
     }
 }
 
+unsafe impl bytemuck::Pod for Array4 {}
+unsafe impl bytemuck::Zeroable for Array4 {}
+unsafe impl bytemuck::Pod for Matrix4 {}
+unsafe impl bytemuck::Zeroable for Matrix4 {}
+
 #[allow(dead_code)]
 fn f32_eq(x: f32, y: f32) -> bool {
     let diff = if x < y { y - x } else { x - y };

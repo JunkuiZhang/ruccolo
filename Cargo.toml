@@ -21,6 +21,7 @@ winit = "0.28"
 wgpu = "0.17"
 pollster = "0.3"
 profiling = "1"
+bytemuck = { version = "1", features = ["derive"] }
 
 [features]
 default = ["profile-with-tracy"]

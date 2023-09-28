@@ -1,17 +1,31 @@
 pub mod fps_manager;
 
+use wgpu::util::DeviceExt;
+
 use crate::runtime::platforms::gpu::GpuContext;
 
-use super::scene_system::SceneObject;
+use super::scene_system::{camera::CameraInfo, SceneObject};
 
 pub struct RenderManager {
     gpu_context: GpuContext,
     pipeline: wgpu::RenderPipeline,
+    camera_trans_buffer: wgpu::Buffer,
+    camera_bindgroup: wgpu::BindGroup,
+    vertex_buffer: wgpu::Buffer,
 }
+
+const VERTICES: [[f32; 3]; 6] = [
+    [-5.0, 0.0, -5.0],
+    [5.0, 0.0, -5.0],
+    [5.0, 0.0, -15.0],
+    [5.0, 0.0, -15.0],
+    [-5.0, 0.0, -15.0],
+    [-5.0, 0.0, -5.0],
+];
 
 #[profiling::all_functions]
 impl RenderManager {
-    pub async fn new(window: &winit::window::Window) -> Self {
+    pub async fn new(window: &winit::window::Window, camera: &CameraInfo) -> Self {
         let dxc_path = std::path::PathBuf::from("./shared");
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::DX12,
@@ -65,10 +79,50 @@ impl RenderManager {
             ),
         });
 
+        let camera_uniforms = camera.get_mvp();
+        let camera_trans_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents: bytemuck::cast_slice(&[camera_uniforms]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+        let camera_bindgroup_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: None,
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+            });
+        let camera_bindgroup = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Camera Bindgroup"),
+            layout: &camera_bindgroup_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: camera_trans_buffer.as_entire_binding(),
+            }],
+        });
+
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents: bytemuck::cast_slice(&[VERTICES]),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+        let vertex_buffer_layout = wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<[f32; 3]>() as _,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &wgpu::vertex_attr_array![0 => Float32x3],
+        };
+
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[],
+                bind_group_layouts: &[&camera_bindgroup_layout],
                 push_constant_ranges: &[],
             });
 
@@ -78,7 +132,7 @@ impl RenderManager {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: "vs_main",
-                buffers: &[],
+                buffers: &[vertex_buffer_layout],
             },
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,
@@ -112,6 +166,9 @@ impl RenderManager {
                 surface_config,
             },
             pipeline,
+            camera_trans_buffer,
+            camera_bindgroup,
+            vertex_buffer,
         }
     }
 
@@ -148,7 +205,10 @@ impl RenderManager {
         {
             let mut pass = command_encoder.begin_render_pass(&rp_desc);
             pass.set_pipeline(&self.pipeline);
-            pass.draw(0..3, 0..1);
+            pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            pass.set_bind_group(0, &self.camera_bindgroup, &[]);
+            pass.draw(0..6, 0..1);
+            // pass.draw_indexed(indices, 0, 0..1);
         }
 
         // submit

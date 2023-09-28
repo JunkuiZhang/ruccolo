@@ -16,12 +16,13 @@ pub struct CameraInfo {
 impl Default for CameraInfo {
     fn default() -> Self {
         Self {
-            position: Array4::new([0.0, 0.0, 0.0, 1.0]),
+            position: Array4::new([0.0, 5.0, 0.0, 1.0]),
             lookat: Array4::new([0.0, 0.0, -1.0, 0.0]),
             updir: Array4::new([0.0, 1.0, 0.0, 0.0]),
             fov2: 45.0,
-            znear: 0.5,
-            zfar: 100.0,
+            znear: 0.1,
+            zfar: 1000.0,
+            aspect: 9.0 / 16.0,
         }
     }
 }
@@ -52,7 +53,20 @@ impl CameraInfo {
 
     /// Here gives perspective projection matrix.
     pub fn projection_matrix(&self) -> Matrix4 {
-        todo!()
+        let scale = 1.0 / self.fov2.tan();
+        let a = self.zfar / (self.znear - self.zfar);
+        let b = self.znear * a;
+
+        Matrix4::new([
+            [self.aspect * scale, 0.0, 0.0, 0.0],
+            [0.0, scale, 0.0, 0.0],
+            [0.0, 0.0, a, -1.0],
+            [0.0, 0.0, b, 0.0],
+        ])
+    }
+
+    pub fn get_mvp(&self) -> Matrix4 {
+        self.projection_matrix() * self.modelview_transform_matrix()
     }
 }
 
