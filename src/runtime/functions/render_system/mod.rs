@@ -4,12 +4,12 @@ use wgpu::util::DeviceExt;
 
 use crate::runtime::{core::mathematics::Matrix4, platforms::gpu::GpuContext};
 
-use super::scene_system::{camera::CameraInfo, SceneObject};
+use super::scene_system::{camera::CameraInfo, VerticesClip};
 
 pub struct RenderManager {
-    gpu_context: GpuContext,
+    pub gpu_context: GpuContext,
     pipeline: wgpu::RenderPipeline,
-    vertex_buffer: wgpu::Buffer,
+    pub bindgroup: Vec<wgpu::BindGroup>,
 }
 
 const VERTICES: [[f32; 3]; 6] = [
@@ -82,21 +82,29 @@ impl RenderManager {
             ),
         });
 
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: None,
-            contents: bytemuck::cast_slice(&[VERTICES]),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
         let vertex_buffer_layout = wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<[f32; 3]>() as _,
+            array_stride: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<u32>()) as _,
             step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &wgpu::vertex_attr_array![0 => Float32x3],
+            attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Uint32],
         };
+        let bg_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Bindgroup Layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: true },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        });
 
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[],
+                bind_group_layouts: &[&bg_layout],
                 push_constant_ranges: &[wgpu::PushConstantRange {
                     stages: wgpu::ShaderStages::VERTEX,
                     range: 0..(std::mem::size_of::<Matrix4>() as u32),
@@ -143,7 +151,7 @@ impl RenderManager {
                 surface_config,
             },
             pipeline,
-            vertex_buffer,
+            bindgroup: Vec::new(),
         }
     }
 
@@ -153,7 +161,7 @@ impl RenderManager {
     }
 
     #[inline]
-    pub fn tick(&self, render_queue: &Vec<SceneObject>, camera_mvp: Matrix4) {
+    pub fn tick(&self, render_queue: &Vec<VerticesClip>, camera_mvp: Matrix4) {
         let frame = self.gpu_context.surface.get_current_texture().unwrap();
         let view = frame.texture.create_view(&wgpu::TextureViewDescriptor {
             // format: Some(self.gpu_context.surface_config.view_formats[0]),
@@ -186,8 +194,14 @@ impl RenderManager {
                 0,
                 bytemuck::cast_slice(&[camera_mvp]),
             );
-            pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            pass.draw(0..6, 0..1);
+            for renderable in render_queue.iter() {
+                // pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+                // pass.draw(0..6, 0..1);
+                pass.set_vertex_buffer(0, renderable.vertex_buff.slice(..));
+                pass.set_index_buffer(renderable.index_buff.slice(..), wgpu::IndexFormat::Uint32);
+                pass.set_bind_group(0, &self.bindgroup[0], &[]);
+                pass.draw_indexed(0..renderable.indices_len, 0, 0..1);
+            }
             // pass.draw_indexed(indices, 0, 0..1);
         }
 

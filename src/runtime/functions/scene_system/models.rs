@@ -1,8 +1,10 @@
 use std::path::Path;
 
+use tobj::{Material, Model};
+
 pub struct Vertex;
 
-pub fn load<P: AsRef<Path>>(path: P) {
+pub fn load<P: AsRef<Path>>(path: P) -> (Vec<Model>, Vec<Material>) {
     let (mods, mats) = tobj::load_obj(
         path.as_ref(),
         &tobj::LoadOptions {
@@ -14,6 +16,6 @@ pub fn load<P: AsRef<Path>>(path: P) {
     )
     .unwrap();
     let mats = mats.unwrap();
-    println!("Models: {:#?}", mods);
-    println!("Materials: {:#?}", mats);
+
+    return (mods, mats);
 }

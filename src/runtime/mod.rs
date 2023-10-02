@@ -16,11 +16,14 @@ pub fn run() {
     let event_loop = winit::event_loop::EventLoop::new();
     let window_manager = WindowManager::new(&event_loop);
     let mut scene_manager = SceneManager::new();
-    scene_manager.update();
-    let render_manager = pollster::block_on(RenderManager::new(
+    let mut render_manager = pollster::block_on(RenderManager::new(
         &window_manager.window,
         &scene_manager.camera,
     ));
+    scene_manager.load_scene(
+        &render_manager.gpu_context.device,
+        &mut render_manager.bindgroup,
+    );
     let mut fps_manager = fps_manager::FpsManager::new();
 
     event_loop.run(move |event, _, control_flow| {
