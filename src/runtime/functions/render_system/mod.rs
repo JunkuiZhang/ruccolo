@@ -9,7 +9,6 @@ use super::scene_system::{camera::CameraInfo, SceneObject};
 pub struct RenderManager {
     gpu_context: GpuContext,
     pipeline: wgpu::RenderPipeline,
-    camera_trans_matrix: Matrix4,
     vertex_buffer: wgpu::Buffer,
 }
 
@@ -83,8 +82,6 @@ impl RenderManager {
             ),
         });
 
-        let camera_uniforms = camera.get_mvp();
-
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
             contents: bytemuck::cast_slice(&[VERTICES]),
@@ -146,7 +143,6 @@ impl RenderManager {
                 surface_config,
             },
             pipeline,
-            camera_trans_matrix: camera_uniforms,
             vertex_buffer,
         }
     }
@@ -156,7 +152,7 @@ impl RenderManager {
         println!("Report: {:#?}", self.gpu_context.instance.generate_report());
     }
 
-    pub fn tick(&self, render_queue: &Vec<SceneObject>) {
+    pub fn tick(&self, render_queue: &Vec<SceneObject>, camera_mvp: Matrix4) {
         let frame = self.gpu_context.surface.get_current_texture().unwrap();
         let view = frame.texture.create_view(&wgpu::TextureViewDescriptor {
             // format: Some(self.gpu_context.surface_config.view_formats[0]),
@@ -187,7 +183,7 @@ impl RenderManager {
             pass.set_push_constants(
                 wgpu::ShaderStages::VERTEX,
                 0,
-                bytemuck::cast_slice(&[self.camera_trans_matrix]),
+                bytemuck::cast_slice(&[camera_mvp]),
             );
             pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             pass.draw(0..6, 0..1);

@@ -44,11 +44,7 @@ pub fn handle_event(
                         ..
                     },
                 ..
-            } => match keycode {
-                VirtualKeyCode::Escape => control_flow.set_exit(),
-                VirtualKeyCode::R => println!("Report: {:?}", render_manager.report()),
-                _ => {}
-            },
+            } => handle_keycode(keycode, control_flow, render_manager),
             // WindowEvent::ModifiersChanged(_) => todo!(),
             // WindowEvent::Ime(_) => todo!(),
             // WindowEvent::CursorMoved {
@@ -105,12 +101,30 @@ pub fn handle_event(
         // Event::Suspended => todo!(),
         // Event::Resumed => todo!(),
         Event::MainEventsCleared => {
-            render_manager.tick(&scene_manager.render_queue);
+            render_manager.tick(&scene_manager.render_queue, scene_manager.camera.get_mvp());
             profiling::finish_frame!();
         }
         // Event::RedrawRequested(_) => todo!(),
         // Event::RedrawEventsCleared => todo!(),
         // Event::LoopDestroyed => todo!(),
+        _ => {}
+    }
+}
+
+#[inline]
+fn handle_keycode(
+    key: VirtualKeyCode,
+    control_flow: &mut ControlFlow,
+    render_manager: &RenderManager,
+) {
+    match key {
+        VirtualKeyCode::Escape => control_flow.set_exit(),
+        VirtualKeyCode::R => println!("Report: {:?}", render_manager.report()),
+        // movement
+        VirtualKeyCode::W => println!("Report: {:?}", render_manager.report()),
+        VirtualKeyCode::A => println!("Report: {:?}", render_manager.report()),
+        VirtualKeyCode::S => println!("Report: {:?}", render_manager.report()),
+        VirtualKeyCode::D => println!("Report: {:?}", render_manager.report()),
         _ => {}
     }
 }
