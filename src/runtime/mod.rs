@@ -28,7 +28,7 @@ pub fn run() {
             control_flow,
             &mut fps_manager,
             &window_manager,
-            &scene_manager,
+            &mut scene_manager,
             &render_manager,
         )
     });

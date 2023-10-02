@@ -27,8 +27,40 @@ impl Default for CameraInfo {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub enum MoveDirection {
+    Forward,
+    Backward,
+    Right,
+    Left,
+}
+
+const SPEED: f32 = 30.0;
+
 impl CameraInfo {
-    pub fn modelview_transform_matrix(&self) -> Matrix4 {
+    pub fn camera_move(&mut self, direction: MoveDirection, delta_t: f32) {
+        let move_vector;
+        match direction {
+            MoveDirection::Forward => {
+                move_vector = self.lookat * SPEED;
+                self.position = self.position + move_vector * delta_t;
+            }
+            MoveDirection::Backward => {
+                move_vector = self.lookat * SPEED;
+                self.position = self.position - move_vector * delta_t;
+            }
+            MoveDirection::Right => {
+                move_vector = cross(&self.lookat, &self.updir) * SPEED;
+                self.position = self.position + move_vector * delta_t;
+            }
+            MoveDirection::Left => {
+                move_vector = cross(&self.lookat, &self.updir) * SPEED;
+                self.position = self.position - move_vector * delta_t;
+            }
+        }
+    }
+
+    fn modelview_transform_matrix(&self) -> Matrix4 {
         let mut gt_perp = cross(&self.lookat, &self.updir);
         gt_perp.normalize();
         let move_transformation = Matrix4::new([
@@ -52,7 +84,7 @@ impl CameraInfo {
     }
 
     /// Here gives perspective projection matrix.
-    pub fn projection_matrix(&self) -> Matrix4 {
+    fn projection_matrix(&self) -> Matrix4 {
         let scale = 1.0 / self.fov2.tan();
         let a = self.zfar / (self.znear - self.zfar);
         let b = self.znear * a;

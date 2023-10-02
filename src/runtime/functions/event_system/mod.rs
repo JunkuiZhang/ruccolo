@@ -5,7 +5,7 @@ use winit::{
 
 use super::{
     render_system::{fps_manager::FpsManager, RenderManager},
-    scene_system::SceneManager,
+    scene_system::{camera::MoveDirection, SceneManager},
     window_system::WindowManager,
 };
 
@@ -15,7 +15,7 @@ pub fn handle_event(
     control_flow: &mut ControlFlow,
     fps_manager: &mut FpsManager,
     window_manager: &WindowManager,
-    scene_manager: &SceneManager,
+    scene_manager: &mut SceneManager,
     render_manager: &RenderManager,
 ) {
     match event {
@@ -44,7 +44,13 @@ pub fn handle_event(
                         ..
                     },
                 ..
-            } => handle_keycode(keycode, control_flow, render_manager),
+            } => handle_keycode(
+                fps_manager.get_delta_t(),
+                keycode,
+                control_flow,
+                render_manager,
+                scene_manager,
+            ),
             // WindowEvent::ModifiersChanged(_) => todo!(),
             // WindowEvent::Ime(_) => todo!(),
             // WindowEvent::CursorMoved {
@@ -113,18 +119,28 @@ pub fn handle_event(
 
 #[inline]
 fn handle_keycode(
+    delta_t: f32,
     key: VirtualKeyCode,
     control_flow: &mut ControlFlow,
     render_manager: &RenderManager,
+    scene_manager: &mut SceneManager,
 ) {
     match key {
         VirtualKeyCode::Escape => control_flow.set_exit(),
         VirtualKeyCode::R => println!("Report: {:?}", render_manager.report()),
         // movement
-        VirtualKeyCode::W => println!("Report: {:?}", render_manager.report()),
-        VirtualKeyCode::A => println!("Report: {:?}", render_manager.report()),
-        VirtualKeyCode::S => println!("Report: {:?}", render_manager.report()),
-        VirtualKeyCode::D => println!("Report: {:?}", render_manager.report()),
+        VirtualKeyCode::W => scene_manager
+            .camera
+            .camera_move(MoveDirection::Forward, delta_t),
+        VirtualKeyCode::A => scene_manager
+            .camera
+            .camera_move(MoveDirection::Left, delta_t),
+        VirtualKeyCode::S => scene_manager
+            .camera
+            .camera_move(MoveDirection::Backward, delta_t),
+        VirtualKeyCode::D => scene_manager
+            .camera
+            .camera_move(MoveDirection::Right, delta_t),
         _ => {}
     }
 }
