@@ -40,6 +40,7 @@ impl SceneManager {
         }
     }
 
+    #[inline]
     pub fn update(&mut self) {
         let plane_pos = Array4::new([0.0, 0.0, 0.0, 1.0]);
         let plane_dir = Array4::new([0.0, 1.0, 0.0, 0.0]);

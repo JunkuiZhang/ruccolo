@@ -17,6 +17,7 @@ impl FpsManager {
         }
     }
 
+    #[inline]
     pub fn tick(&mut self) {
         self.frame_count += 1;
         self.delta_time = self.last_frame.elapsed().as_secs_f32();
@@ -33,12 +34,14 @@ impl FpsManager {
         self.delta_time
     }
 
+    #[inline]
     pub fn update(&mut self, last_update: std::time::Instant) {
         self.fps = self.frame_count;
         self.frame_count = 0;
         self.last_update = last_update
     }
 
+    #[inline]
     pub fn elapsed(&self) -> f32 {
         self.last_update.elapsed().as_secs_f32()
     }

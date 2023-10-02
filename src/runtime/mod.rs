@@ -10,6 +10,7 @@ mod platforms;
 mod resources;
 mod tools;
 
+#[inline]
 pub fn run() {
     log::info!("Engine runtime started.");
     let event_loop = winit::event_loop::EventLoop::new();

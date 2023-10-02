@@ -38,6 +38,7 @@ pub enum MoveDirection {
 const SPEED: f32 = 30.0;
 
 impl CameraInfo {
+    #[inline]
     pub fn camera_move(&mut self, direction: MoveDirection, delta_t: f32) {
         let move_vector;
         match direction {
@@ -60,6 +61,7 @@ impl CameraInfo {
         }
     }
 
+    #[inline]
     fn modelview_transform_matrix(&self) -> Matrix4 {
         let mut gt_perp = cross(&self.lookat, &self.updir);
         gt_perp.normalize();
@@ -84,6 +86,7 @@ impl CameraInfo {
     }
 
     /// Here gives perspective projection matrix.
+    #[inline]
     fn projection_matrix(&self) -> Matrix4 {
         let scale = 1.0 / self.fov2.tan();
         let a = self.zfar / (self.znear - self.zfar);
@@ -97,6 +100,7 @@ impl CameraInfo {
         ])
     }
 
+    #[inline]
     pub fn get_mvp(&self) -> Matrix4 {
         self.projection_matrix() * self.modelview_transform_matrix()
     }
