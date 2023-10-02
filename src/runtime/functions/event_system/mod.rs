@@ -14,7 +14,7 @@ pub fn handle_event(
     event: Event<'_, ()>,
     control_flow: &mut ControlFlow,
     fps_manager: &mut FpsManager,
-    window_manager: &WindowManager,
+    _window_manager: &WindowManager,
     scene_manager: &mut SceneManager,
     render_manager: &RenderManager,
 ) {
