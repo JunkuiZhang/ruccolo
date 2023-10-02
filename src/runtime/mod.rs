@@ -1,4 +1,6 @@
-use crate::runtime::functions::{render_system::fps_manager, scene_system::SceneManager};
+use crate::runtime::functions::{
+    event_system::handle_event, render_system::fps_manager, scene_system::SceneManager,
+};
 
 use self::functions::{render_system::RenderManager, window_system::WindowManager};
 
@@ -20,37 +22,14 @@ pub fn run() {
     ));
     let mut fps_manager = fps_manager::FpsManager::new();
 
-    event_loop.run(move |event, _, control_flow| match event {
-        winit::event::Event::NewEvents(_) => {
-            fps_manager.tick();
-            if fps_manager.elapsed() >= 1.0 {
-                fps_manager.update(std::time::Instant::now());
-                println!("FPS: {}", fps_manager.get_fps());
-            }
-        }
-        winit::event::Event::WindowEvent { event, .. } => match event {
-            winit::event::WindowEvent::CloseRequested => control_flow.set_exit(),
-            winit::event::WindowEvent::KeyboardInput {
-                input:
-                    winit::event::KeyboardInput {
-                        state: winit::event::ElementState::Pressed,
-                        virtual_keycode: Some(keycode),
-                        ..
-                    },
-                ..
-            } => match keycode {
-                winit::event::VirtualKeyCode::Escape => control_flow.set_exit(),
-                winit::event::VirtualKeyCode::R => {
-                    println!("Report: {:?}", render_manager.report())
-                }
-                _ => {}
-            },
-            _ => {}
-        },
-        winit::event::Event::MainEventsCleared => {
-            render_manager.tick(&scene_manager.render_queue);
-            profiling::finish_frame!();
-        }
-        _ => {}
+    event_loop.run(move |event, _, control_flow| {
+        handle_event(
+            event,
+            control_flow,
+            &mut fps_manager,
+            &window_manager,
+            &scene_manager,
+            &render_manager,
+        )
     });
 }

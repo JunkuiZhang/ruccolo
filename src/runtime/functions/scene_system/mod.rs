@@ -1,8 +1,11 @@
+use std::path::PathBuf;
+
 use crate::runtime::core::mathematics::Array4;
 
-use self::camera::CameraInfo;
+use self::{camera::CameraInfo, models::load};
 
 pub mod camera;
+pub mod models;
 
 pub enum SceneObject {
     Plane(PlaneInfo),
@@ -23,6 +26,14 @@ pub struct SceneManager {
 
 impl SceneManager {
     pub fn new() -> Self {
+        let path = PathBuf::new();
+        let path = path
+            .join("assets")
+            .join("scenes")
+            .join("CornellBox-Original")
+            .join("CornellBox-Original.obj");
+        load(path);
+
         SceneManager {
             camera: CameraInfo::default(),
             render_queue: Vec::new(),

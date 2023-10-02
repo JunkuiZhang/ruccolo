@@ -22,6 +22,7 @@ wgpu = "0.17"
 pollster = "0.3"
 profiling = "1"
 bytemuck = { version = "1", features = ["derive"] }
+tobj = "4"
 
 [features]
 default = ["profile-with-tracy"]
