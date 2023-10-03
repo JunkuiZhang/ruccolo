@@ -1,3 +1,5 @@
+use std::default;
+
 /// https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct GltfData {
@@ -165,17 +167,27 @@ pub struct GltfMeshPrimitive {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub material: Option<i32>,
     /// The topology type of primitives to render.
-    #[serde(
-        skip_serializing_if = "Option::is_none",
-        default = "default_integer_four"
-    )]
-    pub mode: Option<i32>, // TODO: use enum
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub mode: Option<GltfMeshPrimitiveMode>,
     /// An array of morph targets.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub targets: Option<Vec<()>>, // TODO: Object type, object [1-*]
+    pub targets: Option<serde_json::Value>,
     /// Application-specific data.
     #[serde(flatten)]
     pub extras: GltfExtras,
+}
+
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr, PartialEq, Debug, Default)]
+#[repr(i32)]
+pub enum GltfMeshPrimitiveMode {
+    Points = 0,
+    Lines = 1,
+    LineLoop,
+    LineStrip,
+    #[default]
+    Triangles,
+    TriangleStrip,
+    TriangleFan,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -559,10 +571,10 @@ pub struct GltfOcclusionTextureInfo {
 pub struct GltfExtras {
     /// JSON object with extension-specific objects.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub extensions: Option<i32>, // TODO:
+    pub extensions: Option<serde_json::Value>,
     /// Application-specific data.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub extras: Option<i32>, // TODO:
+    pub extras: Option<serde_json::Value>,
 }
 
 fn default_integer_zero() -> Option<i32> {

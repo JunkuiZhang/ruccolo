@@ -38,13 +38,7 @@ impl SceneManager {
     }
 
     pub fn load_scene(&mut self, device: &wgpu::Device, bindgroup_list: &mut Vec<wgpu::BindGroup>) {
-        let path = PathBuf::new();
-        let path = path
-            .join("assets")
-            .join("scenes")
-            .join("CornellBox-Original")
-            .join("CornellBox-Original.obj");
-        // let (vertices, materials) = load(path);
+        load("assets/scenes/CornellBox/scene.gltf");
         let bg_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("Bindgroup Layout"),
             entries: &[wgpu::BindGroupLayoutEntry {

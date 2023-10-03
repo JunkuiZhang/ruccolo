@@ -1,5 +1,5 @@
 mod editor;
-mod runtime;
+pub mod runtime;
 
 fn main() {
     prepare();
