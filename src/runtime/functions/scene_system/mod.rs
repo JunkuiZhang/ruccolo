@@ -44,7 +44,7 @@ impl SceneManager {
             .join("scenes")
             .join("CornellBox-Original")
             .join("CornellBox-Original.obj");
-        let (vertices, materials) = load(path);
+        // let (vertices, materials) = load(path);
         let bg_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("Bindgroup Layout"),
             entries: &[wgpu::BindGroupLayoutEntry {
@@ -58,51 +58,51 @@ impl SceneManager {
                 count: None,
             }],
         });
-        for model in vertices.iter() {
-            let color_index = model.mesh.material_id.unwrap() as u32;
-            let mut vertex_data = Vec::new();
-            for chunk in model.mesh.positions.chunks_exact(3) {
-                vertex_data.push(VertexInfo {
-                    vertex: [chunk[0], chunk[1], chunk[2]],
-                    index: color_index,
-                });
-            }
-            let vertex_buff = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: None,
-                contents: bytemuck::cast_slice(&vertex_data),
-                usage: wgpu::BufferUsages::VERTEX,
-            });
-            let index_buff = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: None,
-                contents: bytemuck::cast_slice(&model.mesh.indices),
-                usage: wgpu::BufferUsages::INDEX,
-            });
-            let clip = VerticesClip {
-                vertex_buff,
-                index_buff,
-                indices_len: model.mesh.indices.len() as u32,
-            };
-            self.render_queue.push(clip);
-        }
+        // for model in vertices.iter() {
+        //     let color_index = model.mesh.material_id.unwrap() as u32;
+        //     let mut vertex_data = Vec::new();
+        //     for chunk in model.mesh.positions.chunks_exact(3) {
+        //         vertex_data.push(VertexInfo {
+        //             vertex: [chunk[0], chunk[1], chunk[2]],
+        //             index: color_index,
+        //         });
+        //     }
+        //     let vertex_buff = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //         label: None,
+        //         contents: bytemuck::cast_slice(&vertex_data),
+        //         usage: wgpu::BufferUsages::VERTEX,
+        //     });
+        //     let index_buff = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //         label: None,
+        //         contents: bytemuck::cast_slice(&model.mesh.indices),
+        //         usage: wgpu::BufferUsages::INDEX,
+        //     });
+        //     let clip = VerticesClip {
+        //         vertex_buff,
+        //         index_buff,
+        //         indices_len: model.mesh.indices.len() as u32,
+        //     };
+        //     self.render_queue.push(clip);
+        // }
 
-        let mut color_data = Vec::new();
-        for material in materials.iter() {
-            color_data.push(material.ambient.unwrap());
-        }
-        let color_buff = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: None,
-            contents: bytemuck::cast_slice(&color_data),
-            usage: wgpu::BufferUsages::STORAGE,
-        });
+        // let mut color_data = Vec::new();
+        // for material in materials.iter() {
+        //     color_data.push(material.ambient.unwrap());
+        // }
+        // let color_buff = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //     label: None,
+        //     contents: bytemuck::cast_slice(&color_data),
+        //     usage: wgpu::BufferUsages::STORAGE,
+        // });
 
-        let bindgroup = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Bindgroup"),
-            layout: (&bg_layout),
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::Buffer(color_buff.as_entire_buffer_binding()),
-            }],
-        });
-        bindgroup_list.push(bindgroup);
+        // let bindgroup = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        //     label: Some("Bindgroup"),
+        //     layout: (&bg_layout),
+        //     entries: &[wgpu::BindGroupEntry {
+        //         binding: 0,
+        //         resource: wgpu::BindingResource::Buffer(color_buff.as_entire_buffer_binding()),
+        //     }],
+        // });
+        // bindgroup_list.push(bindgroup);
     }
 }
