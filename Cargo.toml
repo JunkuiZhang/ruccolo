@@ -23,7 +23,7 @@ pollster = "0.3"
 profiling = "1"
 bytemuck = { version = "1", features = ["derive"] }
 tobj = "4"
-gltf = { version = "1" }
+serde_json = "1"
 
 [features]
 default = ["profile-with-tracy"]
