@@ -203,9 +203,15 @@ pub enum GltfMeshPrimitiveAttr {
     Tangent,
     #[serde(rename = "WEIGHT")]
     Weight,
+    #[serde(rename = "COLOR_0")]
+    Color,
     #[serde(rename = "MATRIX_PALETTE")]
     MatrixPalette,
-    // TODO: More value
+    #[serde(rename = "JOINT")]
+    Joint,
+    #[serde(rename = "TEXCOORD_0")]
+    TexCoord,
+    // TODO: Add more
 }
 
 /// The material appearance of a primitive.
