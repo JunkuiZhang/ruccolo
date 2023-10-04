@@ -356,7 +356,7 @@ pub struct GltfAccessor {
     #[serde(
         rename = "byteOffset",
         skip_serializing_if = "Option::is_none",
-        default
+        default = "default_integer_zero"
     )]
     pub byte_offset: Option<usize>,
     /// The datatype of the accessor’s components.
@@ -387,6 +387,21 @@ pub struct GltfAccessor {
     pub extras: GltfExtras,
 }
 
+impl GltfAccessor {
+    pub fn process(&self, buffer_views: &[GltfBufferView], bin_data: &[u8]) {
+        let bufferview_index = self.buffer_view.unwrap_or(0);
+        let bufferview_byteoffset = self.byte_offset.unwrap();
+        let accessor_type = &self.accessor_type;
+        let component_type = &self.component_type;
+        let stride = accessor_type.to_length() * component_type.to_typesize();
+
+        let bufferview = &buffer_views[bufferview_index];
+        let buffer_offset = bufferview.byte_offset.unwrap();
+        let bufferview_length = bufferview.byte_length;
+        let bufferview_data = &bin_data[buffer_offset..(buffer_offset + bufferview_length)];
+    }
+}
+
 /// The datatype of the accessor’s components.
 /// UNSIGNED_INT type **MUST NOT** be used for any accessor that is not referenced by `mesh.primitive.indices`.
 /// Related WebGL functions: `type` parameter of `vertexAttribPointer()`.
@@ -401,6 +416,19 @@ pub enum GltfAccessorComponentType {
     UnsignedShort = 5123,
     UnsignedInt = 5125,
     Float = 5126,
+}
+
+impl GltfAccessorComponentType {
+    pub fn to_typesize(&self) -> usize {
+        match *self {
+            GltfAccessorComponentType::Byte => std::mem::size_of::<u8>(),
+            GltfAccessorComponentType::UnsignedByte => std::mem::size_of::<u8>(),
+            GltfAccessorComponentType::Short => std::mem::size_of::<i16>(),
+            GltfAccessorComponentType::UnsignedShort => std::mem::size_of::<u16>(),
+            GltfAccessorComponentType::UnsignedInt => std::mem::size_of::<u32>(),
+            GltfAccessorComponentType::Float => std::mem::size_of::<f32>(),
+        }
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -421,6 +449,20 @@ pub enum GltfAccessorType {
     Mat4,
 }
 
+impl GltfAccessorType {
+    pub fn to_length(&self) -> usize {
+        match *self {
+            GltfAccessorType::Scalar => 1,
+            GltfAccessorType::Vec2 => 2,
+            GltfAccessorType::Vec3 => 3,
+            GltfAccessorType::Vec4 => 4,
+            GltfAccessorType::Mat2 => 2 * 4,
+            GltfAccessorType::Mat3 => 3 * 4,
+            GltfAccessorType::Mat4 => 4 * 4,
+        }
+    }
+}
+
 /// A view into a buffer generally representing a subset of the buffer.
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct GltfBufferView {
@@ -430,7 +472,7 @@ pub struct GltfBufferView {
     #[serde(
         rename = "byteOffset",
         skip_serializing_if = "Option::is_none",
-        default
+        default = "default_integer_zero"
     )]
     pub byte_offset: Option<usize>,
     /// The length of the bufferView in bytes.

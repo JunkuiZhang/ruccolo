@@ -4,7 +4,10 @@ use wgpu::util::DeviceExt;
 
 use crate::runtime::core::mathematics::Array4;
 
-use self::{camera::CameraInfo, models::load};
+use self::{
+    camera::CameraInfo,
+    models::{gltf::GltfData, load},
+};
 
 pub mod camera;
 pub mod models;
@@ -29,6 +32,51 @@ pub struct SceneManager {
     pub render_queue: Vec<VerticesClip>,
 }
 
+fn traverse_node(index: usize, gltf_data: &GltfData, bin_data: &[u8]) {
+    let node = &gltf_data.nodes.as_ref().unwrap()[index];
+    if let Some(child_list) = &node.children {
+        for child in child_list {
+            traverse_node(*child, gltf_data, bin_data);
+        }
+    }
+
+    let buffer_views = gltf_data.buffer_views.as_ref().unwrap();
+    if let Some(mesh_index) = node.mesh {
+        let mesh = &gltf_data.meshes.as_ref().unwrap()[mesh_index];
+        for mesh_element in mesh.primitives.iter() {
+            for primitive_type in mesh_element.attributes.keys() {
+                let primitive_index = mesh_element.attributes[primitive_type];
+                match primitive_type {
+                    models::gltf::GltfMeshPrimitiveAttr::Position => {
+                        let accessor = &gltf_data.accessors.as_ref().unwrap()[primitive_index];
+                        accessor.process(buffer_views, bin_data);
+
+                        let Some(indices) = mesh_element.indices else {continue;};
+                        let indices_data = &gltf_data.accessors.as_ref().unwrap()[indices];
+                        indices_data.process(buffer_views, bin_data);
+                    }
+                    models::gltf::GltfMeshPrimitiveAttr::Normal => {}
+                    models::gltf::GltfMeshPrimitiveAttr::Tangent => todo!(),
+                    models::gltf::GltfMeshPrimitiveAttr::Weight => todo!(),
+                    models::gltf::GltfMeshPrimitiveAttr::Color => todo!(),
+                    models::gltf::GltfMeshPrimitiveAttr::MatrixPalette => todo!(),
+                    models::gltf::GltfMeshPrimitiveAttr::Joint => todo!(),
+                    models::gltf::GltfMeshPrimitiveAttr::TexCoord => todo!(),
+                }
+            }
+            match mesh_element.mode.unwrap() {
+                models::gltf::GltfMeshPrimitiveMode::Points => todo!(),
+                models::gltf::GltfMeshPrimitiveMode::Lines => todo!(),
+                models::gltf::GltfMeshPrimitiveMode::LineLoop => todo!(),
+                models::gltf::GltfMeshPrimitiveMode::LineStrip => todo!(),
+                models::gltf::GltfMeshPrimitiveMode::Triangles => {}
+                models::gltf::GltfMeshPrimitiveMode::TriangleStrip => todo!(),
+                models::gltf::GltfMeshPrimitiveMode::TriangleFan => todo!(),
+            }
+        }
+    }
+}
+
 impl SceneManager {
     pub fn new() -> Self {
         SceneManager {
@@ -38,8 +86,20 @@ impl SceneManager {
     }
 
     pub fn load_scene(&mut self, device: &wgpu::Device, bindgroup_list: &mut Vec<wgpu::BindGroup>) {
-        load("assets/scenes/CornellBox/scene.gltf");
-        // load("assets/scenes/Curtains/NewSponza.gltf");
+        // let scene_data = load("assets/scenes/triangle/tri.gltf");
+        let (scene_data, bin_data) = load(
+            "assets/scenes/CornellBox/scene.gltf",
+            "assets/scenes/CornellBox/scene.bin",
+        );
+        // let scene_data = load("assets/scenes/Curtains/NewSponza.gltf");
+        let default_scene = scene_data.default_scene.unwrap_or(0);
+        for node_index in scene_data.scenes.as_ref().unwrap()[default_scene]
+            .nodes
+            .as_ref()
+            .unwrap()
+        {
+            traverse_node(*node_index, &scene_data, &bin_data);
+        }
         let bg_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("Bindgroup Layout"),
             entries: &[wgpu::BindGroupLayoutEntry {
