@@ -38,8 +38,8 @@ pub struct GltfData {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub samplers: Option<Vec<GltfSampler>>,
     /// The index of the default scene.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub scene: Option<usize>,
+    #[serde(rename = "scene", skip_serializing_if = "Option::is_none")]
+    pub default_scene: Option<usize>,
     /// An array of scenes.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scenes: Option<Vec<GltfSceneElement>>,
