@@ -178,7 +178,9 @@ pub struct GltfMeshPrimitive {
 }
 
 /// The topology type of primitives to render.
-#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr, PartialEq, Debug, Default)]
+#[derive(
+    serde_repr::Serialize_repr, serde_repr::Deserialize_repr, PartialEq, Debug, Default, Clone, Copy,
+)]
 #[repr(u32)]
 pub enum GltfMeshPrimitiveMode {
     Points = 0,
@@ -193,7 +195,9 @@ pub enum GltfMeshPrimitiveMode {
 
 /// A plain JSON object, where each key corresponds to a mesh attribute semantic
 /// and each value is the index of the accessor containing attribute’s data.
-#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy,
+)]
 pub enum GltfMeshPrimitiveAttr {
     #[serde(rename = "POSITION")]
     Position,
@@ -268,7 +272,7 @@ pub struct GltfMaterial {
 
 /// The material’s alpha rendering mode enumeration specifying the interpretation of the
 /// alpha value of the base color.
-#[derive(serde::Serialize, serde::Deserialize, Debug, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone, Copy)]
 pub enum GltfMaterialAlphaMode {
     /// The alpha value is ignored, and the rendered output is fully opaque.
     #[default]
@@ -564,7 +568,7 @@ pub struct GltfSampler {
 /// S (U) wrapping mode. All valid values correspond to WebGL enums.
 /// Related WebGL functions: `samplerParameteri()` with pname equal to `TEXTURE_WRAP_S`
 /// Related WebGL functions: `samplerParameteri()` with pname equal to `TEXTURE_WRAP_T`
-#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr, Debug, Default)]
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr, Debug, Default, Clone, Copy)]
 #[repr(usize)]
 pub enum GltfSamplerWrap {
     ClampToEdge = 33071,
