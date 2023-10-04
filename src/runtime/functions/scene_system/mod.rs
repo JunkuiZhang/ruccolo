@@ -38,8 +38,8 @@ impl SceneManager {
     }
 
     pub fn load_scene(&mut self, device: &wgpu::Device, bindgroup_list: &mut Vec<wgpu::BindGroup>) {
-        // load("assets/scenes/CornellBox/scene.gltf");
-        load("assets/scenes/Curtains/NewSponza.gltf");
+        load("assets/scenes/CornellBox/scene.gltf");
+        // load("assets/scenes/Curtains/NewSponza.gltf");
         let bg_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("Bindgroup Layout"),
             entries: &[wgpu::BindGroupLayoutEntry {

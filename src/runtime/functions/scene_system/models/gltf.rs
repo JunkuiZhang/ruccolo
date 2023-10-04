@@ -368,10 +368,10 @@ pub struct GltfAccessor {
     pub accessor_type: GltfAccessorType,
     /// Maximum value of each component in this accessor.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub max: Option<[f32; 3]>, // TODO: number [1-16]
+    pub max: Option<Vec<f32>>,
     /// Minimum value of each component in this accessor.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub min: Option<[f32; 3]>, // TODO: number [1-16]
+    pub min: Option<Vec<f32>>,
     /// Sparse storage of elements that deviate from their initialization value.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sparse: Option<GltfAccessorSparse>,
