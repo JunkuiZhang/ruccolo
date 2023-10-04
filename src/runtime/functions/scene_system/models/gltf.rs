@@ -1,4 +1,4 @@
-use std::default;
+use std::collections::BTreeMap;
 
 /// https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -39,7 +39,7 @@ pub struct GltfData {
     pub samplers: Option<Vec<GltfSampler>>,
     /// The index of the default scene.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub scene: Option<i32>,
+    pub scene: Option<usize>,
     /// An array of scenes.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scenes: Option<Vec<GltfSceneElement>>,
@@ -71,7 +71,7 @@ pub struct GltfAsset {
 pub struct GltfSceneElement {
     /// The indices of each root node.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub nodes: Option<Vec<i32>>,
+    pub nodes: Option<Vec<usize>>,
     /// The user-defined name of this object.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -92,13 +92,13 @@ pub struct GltfSceneElement {
 pub struct GltfNode {
     /// The index of the camera referenced by this node.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub camera: Option<i32>,
+    pub camera: Option<usize>,
     /// The indices of this node’s children.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub children: Option<Vec<i32>>,
+    pub children: Option<Vec<usize>>,
     /// The index of the skin referenced by this node.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub skin: Option<i32>,
+    pub skin: Option<usize>,
     /// A floating-point 4x4 transformation matrix stored in column-major order.
     #[serde(
         skip_serializing_if = "Option::is_none",
@@ -107,7 +107,7 @@ pub struct GltfNode {
     pub matrix: Option<[f32; 16]>,
     /// The index of the mesh in this node.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub mesh: Option<i32>,
+    pub mesh: Option<usize>,
     /// The node’s unit quaternion rotation in the order (x, y, z, w), where w is the scalar.
     #[serde(skip_serializing_if = "Option::is_none", default = "default_vector4")]
     pub rotation: Option<[f32; 4]>,
@@ -159,13 +159,13 @@ pub struct GltfMesh {
 pub struct GltfMeshPrimitive {
     /// A plain JSON object, where each key corresponds to a mesh attribute semantic
     /// and each value is the index of the accessor containing attribute’s data.
-    pub attributes: GltfMeshPrimitiveAttr, // TODO: Object type?
+    pub attributes: BTreeMap<GltfMeshPrimitiveAttr, usize>,
     /// The index of the accessor that contains the vertex indices.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub indices: Option<i32>,
+    pub indices: Option<usize>,
     /// The index of the material to apply to this primitive when rendering.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub material: Option<i32>,
+    pub material: Option<usize>,
     /// The topology type of primitives to render.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub mode: Option<GltfMeshPrimitiveMode>,
@@ -177,8 +177,9 @@ pub struct GltfMeshPrimitive {
     pub extras: GltfExtras,
 }
 
+/// The topology type of primitives to render.
 #[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr, PartialEq, Debug, Default)]
-#[repr(i32)]
+#[repr(u32)]
 pub enum GltfMeshPrimitiveMode {
     Points = 0,
     Lines = 1,
@@ -190,12 +191,21 @@ pub enum GltfMeshPrimitiveMode {
     TriangleFan,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct GltfMeshPrimitiveAttr {
+/// A plain JSON object, where each key corresponds to a mesh attribute semantic
+/// and each value is the index of the accessor containing attribute’s data.
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum GltfMeshPrimitiveAttr {
     #[serde(rename = "POSITION")]
-    pub position: i32, // TODO: Use enum
+    Position,
     #[serde(rename = "NORMAL")]
-    pub normal: i32,
+    Normal,
+    #[serde(rename = "TANGENT")]
+    Tangent,
+    #[serde(rename = "WEIGHT")]
+    Weight,
+    #[serde(rename = "MATRIX_PALETTE")]
+    MatrixPalette,
+    // TODO: More value
 }
 
 /// The material appearance of a primitive.
@@ -232,12 +242,8 @@ pub struct GltfMaterial {
     )]
     pub emissive_factor: Option<[f32; 3]>,
     /// The alpha rendering mode of the material.
-    #[serde(
-        rename = "alphaMode",
-        skip_serializing_if = "Option::is_none",
-        default = "default_alpha_mode"
-    )]
-    pub alpha_mode: Option<String>, // TODO: Use enum
+    #[serde(rename = "alphaMode", skip_serializing_if = "Option::is_none", default)]
+    pub alpha_mode: Option<GltfMaterialAlphaMode>,
     /// The alpha cutoff value of the material.
     #[serde(
         rename = "alphaCutoff",
@@ -252,6 +258,27 @@ pub struct GltfMaterial {
         default
     )]
     pub double_sided: Option<bool>,
+}
+
+/// The material’s alpha rendering mode enumeration specifying the interpretation of the
+/// alpha value of the base color.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Default)]
+pub enum GltfMaterialAlphaMode {
+    /// The alpha value is ignored, and the rendered output is fully opaque.
+    #[default]
+    #[serde(rename = "OPAQUE")]
+    Opaque,
+    /// The rendered output is either fully opaque or fully transparent depending on the
+    /// alpha value and the specified `alphaCutoff` value;
+    /// the exact appearance of the edges **MAY** be subject to implementation-specific
+    /// techniques such as “Alpha-to-Coverage”.
+    #[serde(rename = "MASK")]
+    Mask,
+    /// The alpha value is used to composite the source and destination areas.
+    /// The rendered output is combined with the background using the normal painting operation
+    /// (i.e. the Porter and Duff over operator).
+    #[serde(rename = "BLEND")]
+    Blend,
 }
 
 /// A set of parameter values that are used to define the metallic-roughness material model
@@ -272,14 +299,14 @@ pub struct GltfPbrMetallicRoughness {
     #[serde(
         rename = "metallicFactor",
         skip_serializing_if = "Option::is_none",
-        default = "default_metallic_factor"
+        default = "default_float_one"
     )]
     pub metallic_factor: Option<f32>,
     /// The factor for the roughness of the material.
     #[serde(
         rename = "roughnessFactor",
         skip_serializing_if = "Option::is_none",
-        default = "default_metallic_factor"
+        default = "default_float_one"
     )]
     pub roughness_factor: Option<f32>,
     /// The metallic-roughness texture.
@@ -293,58 +320,46 @@ pub struct GltfPbrMetallicRoughness {
     pub extras: GltfExtras,
 }
 
-fn default_pbr_base_color_factor() -> Option<[f32; 4]> {
-    Some([1.0; 4])
-}
-
-fn default_metallic_factor() -> Option<f32> {
-    Some(1.0)
-}
-
 /// Reference to a texture.
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct GltfTextureInfo {
     /// The index of the texture.
-    pub index: i32,
+    pub index: usize,
     /// The set index of texture’s TEXCOORD attribute used for texture coordinate mapping.
     #[serde(
         rename = "texCoord",
         skip_serializing_if = "Option::is_none",
-        default = "default_tex_coord"
+        default = "default_integer_zero"
     )]
-    pub tex_coord: Option<i32>,
+    pub tex_coord: Option<usize>,
     /// Application-specific data.
     #[serde(flatten)]
     pub extras: GltfExtras,
-}
-
-fn default_tex_coord() -> Option<i32> {
-    Some(0)
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct GltfAccessor {
     /// The index of the bufferView.
     #[serde(rename = "bufferView", skip_serializing_if = "Option::is_none")]
-    pub buffer_view: Option<i32>,
+    pub buffer_view: Option<usize>,
     /// The offset relative to the start of the buffer view in bytes.
     #[serde(
         rename = "byteOffset",
         skip_serializing_if = "Option::is_none",
         default
     )]
-    pub byte_offset: Option<i32>,
+    pub byte_offset: Option<usize>,
     /// The datatype of the accessor’s components.
     #[serde(rename = "componentType")]
-    pub component_type: i32,
+    pub component_type: GltfAccessorComponentType,
     /// Specifies whether integer data values are normalized before usage.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub normalized: Option<bool>,
     /// The number of elements referenced by this accessor.
-    pub count: i32,
+    pub count: usize,
     /// Specifies if the accessor’s elements are scalars, vectors, or matrices.
     #[serde(rename = "type")]
-    pub accessor_type: String,
+    pub accessor_type: GltfAccessorType,
     /// Maximum value of each component in this accessor.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max: Option<[f32; 3]>, // TODO: number [1-16]
@@ -362,27 +377,61 @@ pub struct GltfAccessor {
     pub extras: GltfExtras,
 }
 
+/// The datatype of the accessor’s components.
+/// UNSIGNED_INT type **MUST NOT** be used for any accessor that is not referenced by `mesh.primitive.indices`.
+/// Related WebGL functions: `type` parameter of `vertexAttribPointer()`.
+/// The corresponding typed arrays are `Int8Array`, `Uint8Array`, `Int16Array`, `Uint16Array`,
+/// `Uint32Array`, and `Float32Array`.
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr, Debug)]
+#[repr(u32)]
+pub enum GltfAccessorComponentType {
+    Byte = 5120,
+    UnsignedByte = 5121,
+    Short = 5122,
+    UnsignedShort = 5123,
+    UnsignedInt = 5125,
+    Float = 5126,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub enum GltfAccessorType {
+    #[serde(rename = "SCALAR")]
+    Scalar,
+    #[serde(rename = "VEC2")]
+    Vec2,
+    #[serde(rename = "VEC3")]
+    Vec3,
+    #[serde(rename = "VEC4")]
+    Vec4,
+    #[serde(rename = "MAT2")]
+    Mat2,
+    #[serde(rename = "MAT3")]
+    Mat3,
+    #[serde(rename = "MAT4")]
+    Mat4,
+}
+
 /// A view into a buffer generally representing a subset of the buffer.
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct GltfBufferView {
     /// The index of the buffer.
-    pub buffer: i32,
+    pub buffer: usize,
     /// The offset into the buffer in bytes.
     #[serde(
         rename = "byteOffset",
         skip_serializing_if = "Option::is_none",
         default
     )]
-    pub byte_offset: Option<i32>,
+    pub byte_offset: Option<usize>,
     /// The length of the bufferView in bytes.
     #[serde(rename = "byteLength")]
-    pub byte_length: i32,
+    pub byte_length: usize,
     /// The stride, in bytes.
     #[serde(rename = "byteStride", skip_serializing_if = "Option::is_none")]
-    pub byte_stride: Option<i32>,
+    pub byte_stride: Option<usize>,
     /// The hint representing the intended GPU buffer type to use with this buffer view.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub target: Option<i32>,
+    pub target: Option<usize>,
     /// The user-defined name of this object.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -399,7 +448,7 @@ pub struct GltfBuffer {
     pub uri: Option<String>,
     /// The length of the buffer in bytes.
     #[serde(rename = "byteLength")]
-    pub byte_length: i32,
+    pub byte_length: usize,
     /// The user-defined name of this object.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -411,7 +460,7 @@ pub struct GltfBuffer {
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct GltfAccessorSparse {
     /// Number of deviating accessor values stored in the sparse array.
-    pub count: i32,
+    pub count: usize,
     /// An object pointing to a buffer view containing the indices of deviating accessor values.
     /// The number of indices is equal to `count`. Indices MUST strictly increase.
     pub indices: GltfAccessorSparseIndices,
@@ -428,17 +477,17 @@ pub struct GltfAccessorSparseIndices {
     /// The referenced buffer view MUST NOT have its `target` or `byteStride` properties defined.
     /// The buffer view and the optional `byteOffset` MUST be aligned to the `componentType` byte length.
     #[serde(rename = "bufferView")]
-    pub buffer_view: i32,
+    pub buffer_view: usize,
     /// The offset relative to the start of the buffer view in bytes.
     #[serde(
         rename = "byteOffset",
         skip_serializing_if = "Option::is_none",
         default
     )]
-    pub buffer_offset: Option<i32>,
+    pub buffer_offset: Option<usize>,
     /// The indices data type.
     #[serde(rename = "componentType")]
-    pub component_type: i32,
+    pub component_type: usize,
     /// Application-specific data.
     #[serde(flatten)]
     pub extras: GltfExtras,
@@ -449,14 +498,14 @@ pub struct GltfAccessorSparseValues {
     /// The index of the bufferView with sparse values.
     /// The referenced buffer view MUST NOT have its `target` or `byteStride` properties defined.
     #[serde(rename = "bufferView")]
-    pub buffer_view: i32,
+    pub buffer_view: usize,
     /// The offset relative to the start of the buffer view in bytes.
     #[serde(
         rename = "byteOffset",
         skip_serializing_if = "Option::is_none",
         default
     )]
-    pub buffer_offset: Option<i32>,
+    pub buffer_offset: Option<usize>,
     /// Application-specific data.
     #[serde(flatten)]
     pub extras: GltfExtras,
@@ -474,7 +523,7 @@ pub struct GltfImage {
     /// The index of the bufferView that contains the image.
     /// This field MUST NOT be defined when `uri` is defined.
     #[serde(rename = "bufferView", skip_serializing_if = "Option::is_none")]
-    pub buffer_view: Option<i32>,
+    pub buffer_view: Option<usize>,
     /// The user-defined name of this object.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -488,22 +537,34 @@ pub struct GltfImage {
 pub struct GltfSampler {
     /// Magnification filter.
     #[serde(rename = "magFilter", skip_serializing_if = "Option::is_none")]
-    pub mag_filter: Option<i32>,
+    pub mag_filter: Option<usize>,
     /// Minification filter.
     #[serde(rename = "minFilter", skip_serializing_if = "Option::is_none")]
-    pub min_filter: Option<i32>,
+    pub min_filter: Option<usize>,
     /// S (U) wrapping mode.
     #[serde(rename = "wrapS", skip_serializing_if = "Option::is_none")]
-    pub wrap_s: Option<i32>, // TODO: Default 10497
+    pub wrap_s: Option<GltfSamplerWrap>,
     /// T (V) wrapping mode.
     #[serde(rename = "wrapT", skip_serializing_if = "Option::is_none")]
-    pub wrap_t: Option<i32>, // TODO: Default 10497
+    pub wrap_t: Option<GltfSamplerWrap>,
     /// The user-defined name of this object.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     /// Application-specific data.
     #[serde(flatten)]
     pub extras: GltfExtras,
+}
+
+/// S (U) wrapping mode. All valid values correspond to WebGL enums.
+/// Related WebGL functions: `samplerParameteri()` with pname equal to `TEXTURE_WRAP_S`
+/// Related WebGL functions: `samplerParameteri()` with pname equal to `TEXTURE_WRAP_T`
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr, Debug, Default)]
+#[repr(usize)]
+pub enum GltfSamplerWrap {
+    ClampToEdge = 33071,
+    MirroredRepeat = 33648,
+    #[default]
+    Repeat = 10497,
 }
 
 /// A texture and its sampler.
@@ -514,12 +575,12 @@ pub struct GltfTexture {
     /// The index of the sampler used by this texture.
     /// When undefined, a sampler with repeat wrapping and auto filtering SHOULD be used.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub sampler: Option<i32>,
+    pub sampler: Option<usize>,
     /// The index of the image used by this texture.
     /// When undefined, an extension or other mechanism SHOULD supply an alternate texture source,
     /// otherwise behavior is undefined.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub source: Option<i32>,
+    pub source: Option<usize>,
     /// The user-defined name of this object.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -531,14 +592,14 @@ pub struct GltfTexture {
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct GltfNormalTextureInfo {
     /// The index of the texture.
-    pub index: i32,
+    pub index: usize,
     /// The set index of texture’s TEXCOORD attribute used for texture coordinate mapping.
     #[serde(
         rename = "texCoord",
         skip_serializing_if = "Option::is_none",
         default = "default_integer_zero"
     )]
-    pub tex_coord: Option<i32>,
+    pub tex_coord: Option<usize>,
     /// The scalar parameter applied to each normal vector of the normal texture.
     #[serde(skip_serializing_if = "Option::is_none", default = "default_float_one")]
     pub scale: Option<f32>,
@@ -551,14 +612,14 @@ pub struct GltfNormalTextureInfo {
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct GltfOcclusionTextureInfo {
     /// The index of the texture.
-    pub index: i32,
+    pub index: usize,
     /// The set index of texture’s TEXCOORD attribute used for texture coordinate mapping.
     #[serde(
         rename = "texCoord",
         skip_serializing_if = "Option::is_none",
         default = "default_integer_zero"
     )]
-    pub tex_coord: Option<i32>,
+    pub tex_coord: Option<usize>,
     /// The scalar parameter applied to each normal vector of the normal texture.
     #[serde(skip_serializing_if = "Option::is_none", default = "default_float_one")]
     pub strength: Option<f32>,
@@ -577,12 +638,8 @@ pub struct GltfExtras {
     pub extras: Option<serde_json::Value>,
 }
 
-fn default_integer_zero() -> Option<i32> {
+fn default_integer_zero() -> Option<usize> {
     Some(0)
-}
-
-fn default_integer_four() -> Option<i32> {
-    Some(4)
 }
 
 fn default_float_one() -> Option<f32> {
@@ -605,12 +662,12 @@ fn default_vector4() -> Option<[f32; 4]> {
     Some([0.0, 0.0, 0.0, 1.0])
 }
 
+fn default_pbr_base_color_factor() -> Option<[f32; 4]> {
+    Some([1.0; 4])
+}
+
 fn default_matrix_identity() -> Option<[f32; 16]> {
     Some([
         1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
     ])
-}
-
-fn default_alpha_mode() -> Option<String> {
-    Some("OPAQUE".to_string())
 }

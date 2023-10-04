@@ -11,6 +11,5 @@ pub fn load<P: AsRef<Path> + Debug + Clone>(path: P) {
     let content: gltf::GltfData =
         serde_json::from_reader(reader).expect(&format!("Unable to parser json file: {:?}", path));
 
-    let extras = content.asset.extras.extras.unwrap();
-    println!("{:#?}", extras.as_object().unwrap());
+    println!("{:#?}", content.accessors.unwrap());
 }
