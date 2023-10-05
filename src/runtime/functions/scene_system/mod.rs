@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use wgpu::util::DeviceExt;
 
 use crate::runtime::core::mathematics::Array4;
@@ -33,26 +31,24 @@ pub struct SceneManager {
 }
 
 fn traverse_node(index: usize, gltf_data: &GltfData, bin_data: &[u8]) {
-    let node = &gltf_data.nodes.as_ref().unwrap()[index];
-    if let Some(child_list) = &node.children {
-        for child in child_list {
-            traverse_node(*child, gltf_data, bin_data);
-        }
+    let node = &gltf_data.nodes[index];
+    for child in &node.children {
+        traverse_node(*child, gltf_data, bin_data);
     }
 
-    let buffer_views = gltf_data.buffer_views.as_ref().unwrap();
+    let buffer_views = &gltf_data.buffer_views;
     if let Some(mesh_index) = node.mesh {
-        let mesh = &gltf_data.meshes.as_ref().unwrap()[mesh_index];
+        let mesh = &gltf_data.meshes[mesh_index];
         for mesh_element in mesh.primitives.iter() {
             for primitive_type in mesh_element.attributes.keys() {
                 let primitive_index = mesh_element.attributes[primitive_type];
                 match primitive_type {
                     models::gltf::GltfMeshPrimitiveAttr::Position => {
-                        let accessor = &gltf_data.accessors.as_ref().unwrap()[primitive_index];
+                        let accessor = &gltf_data.accessors[primitive_index];
                         accessor.process(buffer_views, bin_data);
 
                         let Some(indices) = mesh_element.indices else {continue;};
-                        let indices_data = &gltf_data.accessors.as_ref().unwrap()[indices];
+                        let indices_data = &gltf_data.accessors[indices];
                         indices_data.process(buffer_views, bin_data);
                     }
                     models::gltf::GltfMeshPrimitiveAttr::Normal => {}
@@ -93,11 +89,7 @@ impl SceneManager {
         );
         // let scene_data = load("assets/scenes/Curtains/NewSponza.gltf");
         let default_scene = scene_data.default_scene.unwrap_or(0);
-        for node_index in scene_data.scenes.as_ref().unwrap()[default_scene]
-            .nodes
-            .as_ref()
-            .unwrap()
-        {
+        for node_index in &scene_data.scenes[default_scene].nodes {
             traverse_node(*node_index, &scene_data, &bin_data);
         }
         let bg_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {

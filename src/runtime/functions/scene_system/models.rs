@@ -17,7 +17,7 @@ pub fn load<P: AsRef<Path> + Debug + Clone>(
     let content: gltf::GltfData = serde_json::from_reader(reader)
         .expect(&format!("Unable to parser json file: {:?}", gltf_path));
 
-    let bin_length = content.buffers.as_ref().unwrap()[0].byte_length;
+    let bin_length = content.buffers[0].byte_length;
     let bin_file = std::fs::File::open(bin_path.clone()).expect(&format!(
         "Unable to open the bin file: {:?}",
         bin_path.clone()
