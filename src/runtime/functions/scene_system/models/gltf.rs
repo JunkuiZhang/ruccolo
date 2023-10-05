@@ -4,49 +4,57 @@ use std::collections::BTreeMap;
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct GltfData {
     /// Names of glTF extensions used in this asset.
-    #[serde(rename = "extensionsUsed", skip_serializing_if = "Option::is_none")]
-    pub extensions_used: Option<Vec<String>>,
+    #[serde(
+        rename = "extensionsUsed",
+        skip_serializing_if = "Vec::is_empty",
+        default
+    )]
+    pub extensions_used: Vec<String>,
     /// Names of glTF extensions required to properly load this asset.
-    #[serde(rename = "extensionsRequired", skip_serializing_if = "Option::is_none")]
-    pub extensions_required: Option<Vec<String>>,
+    #[serde(
+        rename = "extensionsRequired",
+        skip_serializing_if = "Vec::is_empty",
+        default
+    )]
+    pub extensions_required: Vec<String>,
     /// An array of accessors.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub accessors: Option<Vec<GltfAccessor>>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub accessors: Vec<GltfAccessor>,
     // TODO: Animations
     /// Metadata about the glTF asset.
     pub asset: GltfAsset,
     ///	An array of buffers.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub buffers: Option<Vec<GltfBuffer>>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub buffers: Vec<GltfBuffer>,
     /// An array of bufferViews.
-    #[serde(rename = "bufferViews", skip_serializing_if = "Option::is_none")]
-    pub buffer_views: Option<Vec<GltfBufferView>>,
+    #[serde(rename = "bufferViews", skip_serializing_if = "Vec::is_empty", default)]
+    pub buffer_views: Vec<GltfBufferView>,
     // TODO: Cameras
     /// An array of images.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub images: Option<Vec<GltfImage>>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub images: Vec<GltfImage>,
     /// An array of materials.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub materials: Option<Vec<GltfMaterial>>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub materials: Vec<GltfMaterial>,
     /// An array of meshes.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub meshes: Option<Vec<GltfMesh>>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub meshes: Vec<GltfMesh>,
     /// An array of nodes.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nodes: Option<Vec<GltfNode>>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub nodes: Vec<GltfNode>,
     /// An array of samplers.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub samplers: Option<Vec<GltfSampler>>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub samplers: Vec<GltfSampler>,
     /// The index of the default scene.
     #[serde(rename = "scene", skip_serializing_if = "Option::is_none")]
     pub default_scene: Option<usize>,
     /// An array of scenes.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub scenes: Option<Vec<GltfSceneElement>>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub scenes: Vec<GltfSceneElement>,
     // TODO: Skins
     /// An array of textures.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub textures: Option<Vec<GltfTexture>>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub textures: Vec<GltfTexture>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -70,8 +78,8 @@ pub struct GltfAsset {
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct GltfSceneElement {
     /// The indices of each root node.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nodes: Option<Vec<usize>>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub nodes: Vec<usize>,
     /// The user-defined name of this object.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -94,8 +102,8 @@ pub struct GltfNode {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub camera: Option<usize>,
     /// The indices of this node’s children.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub children: Option<Vec<usize>>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub children: Vec<usize>,
     /// The index of the skin referenced by this node.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub skin: Option<usize>,
