@@ -88,15 +88,31 @@ impl CameraInfo {
     /// Here gives perspective projection matrix.
     #[inline]
     fn projection_matrix(&self) -> Matrix4 {
-        let scale = 1.0 / self.fov2.tan();
-        let a = self.zfar / (self.znear - self.zfar);
-        let b = self.znear * a;
+        // let scale = 1.0 / self.fov2.tan();
+        // let a = self.zfar / (self.znear - self.zfar);
+        // let b = self.znear * a;
 
+        // Matrix4::new([
+        //     [self.aspect * scale, 0.0, 0.0, 0.0],
+        //     [0.0, scale, 0.0, 0.0],
+        //     [0.0, 0.0, a, -1.0],
+        //     [0.0, 0.0, b, 0.0],
+        // ])
         Matrix4::new([
-            [self.aspect * scale, 0.0, 0.0, 0.0],
-            [0.0, scale, 0.0, 0.0],
-            [0.0, 0.0, a, -1.0],
-            [0.0, 0.0, b, 0.0],
+            [1.0 / (self.aspect * self.fov2.tan()), 0.0, 0.0, 0.0],
+            [0.0, 2.0 / self.fov2.tan(), 0.0, 0.0],
+            [
+                0.0,
+                0.0,
+                (self.znear + self.zfar) / (self.znear - self.zfar),
+                -1.0,
+            ],
+            [
+                0.0,
+                0.0,
+                (self.znear * self.zfar) / (self.znear - self.zfar),
+                0.0,
+            ],
         ])
     }
 

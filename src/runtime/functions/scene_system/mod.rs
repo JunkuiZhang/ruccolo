@@ -1,10 +1,6 @@
-use wgpu::util::DeviceExt;
-
-use crate::runtime::core::mathematics::Array4;
-
 use self::{
     camera::CameraInfo,
-    models::{gltf::GltfData, load},
+    models::{gltf::GltfData, load, renderable::SceneRenderData},
 };
 
 pub mod camera;
@@ -27,49 +23,45 @@ pub struct VertexInfo {
 
 pub struct SceneManager {
     pub camera: CameraInfo,
-    pub render_queue: Vec<VerticesClip>,
 }
 
-fn traverse_node(index: usize, gltf_data: &GltfData, bin_data: &[u8]) {
+fn traverse_node(
+    index: usize,
+    gltf_data: &GltfData,
+    bin_data: &[u8],
+    device: &wgpu::Device,
+    render_queue: &mut Vec<SceneRenderData>,
+) {
     let node = &gltf_data.nodes[index];
-    for child in &node.children {
-        traverse_node(*child, gltf_data, bin_data);
+    for child in node.children.iter() {
+        traverse_node(*child, gltf_data, bin_data, device, render_queue);
     }
 
     let buffer_views = &gltf_data.buffer_views;
-    if let Some(mesh_index) = node.mesh {
-        let mesh = &gltf_data.meshes[mesh_index];
-        for mesh_element in mesh.primitives.iter() {
-            for primitive_type in mesh_element.attributes.keys() {
-                let primitive_index = mesh_element.attributes[primitive_type];
-                match primitive_type {
-                    models::gltf::GltfMeshPrimitiveAttr::Position => {
-                        let accessor = &gltf_data.accessors[primitive_index];
-                        accessor.process(buffer_views, bin_data);
-
-                        let Some(indices) = mesh_element.indices else {continue;};
-                        let indices_data = &gltf_data.accessors[indices];
-                        indices_data.process(buffer_views, bin_data);
-                    }
-                    models::gltf::GltfMeshPrimitiveAttr::Normal => {}
-                    models::gltf::GltfMeshPrimitiveAttr::Tangent => todo!(),
-                    models::gltf::GltfMeshPrimitiveAttr::Weight => todo!(),
-                    models::gltf::GltfMeshPrimitiveAttr::Color => todo!(),
-                    models::gltf::GltfMeshPrimitiveAttr::MatrixPalette => todo!(),
-                    models::gltf::GltfMeshPrimitiveAttr::Joint => todo!(),
-                    models::gltf::GltfMeshPrimitiveAttr::TexCoord => todo!(),
-                }
-            }
-            match mesh_element.mode.unwrap() {
-                models::gltf::GltfMeshPrimitiveMode::Points => todo!(),
-                models::gltf::GltfMeshPrimitiveMode::Lines => todo!(),
-                models::gltf::GltfMeshPrimitiveMode::LineLoop => todo!(),
-                models::gltf::GltfMeshPrimitiveMode::LineStrip => todo!(),
-                models::gltf::GltfMeshPrimitiveMode::Triangles => {}
-                models::gltf::GltfMeshPrimitiveMode::TriangleStrip => todo!(),
-                models::gltf::GltfMeshPrimitiveMode::TriangleFan => todo!(),
-            }
+    let Some(mesh_index) = node.mesh else { return; };
+    let mesh = &gltf_data.meshes[mesh_index];
+    for mesh_element in mesh.primitives.iter() {
+        let mut render_data = SceneRenderData::default();
+        for primitive_type in mesh_element.attributes.keys() {
+            let primitive_index = mesh_element.attributes[primitive_type];
+            let accessor = &gltf_data.accessors[primitive_index];
+            render_data.process_primitive(primitive_type, buffer_views, bin_data, device, accessor);
         }
+        let indices_index = mesh_element.indices.unwrap();
+        let indices_data = &gltf_data.accessors[indices_index];
+        render_data.process_indices(buffer_views, bin_data, device, indices_data);
+
+        match mesh_element.mode.unwrap() {
+            models::gltf::GltfMeshPrimitiveMode::Points => todo!(),
+            models::gltf::GltfMeshPrimitiveMode::Lines => todo!(),
+            models::gltf::GltfMeshPrimitiveMode::LineLoop => todo!(),
+            models::gltf::GltfMeshPrimitiveMode::LineStrip => todo!(),
+            models::gltf::GltfMeshPrimitiveMode::Triangles => {}
+            models::gltf::GltfMeshPrimitiveMode::TriangleStrip => todo!(),
+            models::gltf::GltfMeshPrimitiveMode::TriangleFan => todo!(),
+        }
+
+        render_queue.push(render_data);
     }
 }
 
@@ -77,20 +69,24 @@ impl SceneManager {
     pub fn new() -> Self {
         SceneManager {
             camera: CameraInfo::default(),
-            render_queue: Vec::new(),
         }
     }
 
-    pub fn load_scene(&mut self, device: &wgpu::Device, bindgroup_list: &mut Vec<wgpu::BindGroup>) {
+    pub fn load_scene(
+        &mut self,
+        device: &wgpu::Device,
+        render_queue: &mut Vec<SceneRenderData>,
+        bindgroup_list: &mut Vec<wgpu::BindGroup>,
+    ) {
         // let scene_data = load("assets/scenes/triangle/tri.gltf");
         let (scene_data, bin_data) = load(
             "assets/scenes/CornellBox/scene.gltf",
             "assets/scenes/CornellBox/scene.bin",
         );
         // let scene_data = load("assets/scenes/Curtains/NewSponza.gltf");
-        let default_scene = scene_data.default_scene.unwrap_or(0);
-        for node_index in &scene_data.scenes[default_scene].nodes {
-            traverse_node(*node_index, &scene_data, &bin_data);
+        let default_scene = scene_data.default_scene.unwrap();
+        for node_index in scene_data.scenes[default_scene].nodes.iter() {
+            traverse_node(*node_index, &scene_data, &bin_data, device, render_queue);
         }
         let bg_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("Bindgroup Layout"),
@@ -105,32 +101,6 @@ impl SceneManager {
                 count: None,
             }],
         });
-        // for model in vertices.iter() {
-        //     let color_index = model.mesh.material_id.unwrap() as u32;
-        //     let mut vertex_data = Vec::new();
-        //     for chunk in model.mesh.positions.chunks_exact(3) {
-        //         vertex_data.push(VertexInfo {
-        //             vertex: [chunk[0], chunk[1], chunk[2]],
-        //             index: color_index,
-        //         });
-        //     }
-        //     let vertex_buff = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        //         label: None,
-        //         contents: bytemuck::cast_slice(&vertex_data),
-        //         usage: wgpu::BufferUsages::VERTEX,
-        //     });
-        //     let index_buff = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        //         label: None,
-        //         contents: bytemuck::cast_slice(&model.mesh.indices),
-        //         usage: wgpu::BufferUsages::INDEX,
-        //     });
-        //     let clip = VerticesClip {
-        //         vertex_buff,
-        //         index_buff,
-        //         indices_len: model.mesh.indices.len() as u32,
-        //     };
-        //     self.render_queue.push(clip);
-        // }
 
         // let mut color_data = Vec::new();
         // for material in materials.iter() {

@@ -4,12 +4,13 @@ use wgpu::util::DeviceExt;
 
 use crate::runtime::{core::mathematics::Matrix4, platforms::gpu::GpuContext};
 
-use super::scene_system::{camera::CameraInfo, VerticesClip};
+use super::scene_system::{camera::CameraInfo, models::renderable::SceneRenderData, VerticesClip};
 
-pub struct RenderManager {
+pub struct RenderManager<'a> {
     pub gpu_context: GpuContext,
     pipeline: wgpu::RenderPipeline,
     pub bindgroup: Vec<wgpu::BindGroup>,
+    pub render_queue: Vec<SceneRenderData<'a>>,
 }
 
 const VERTICES: [[f32; 3]; 6] = [
@@ -22,8 +23,8 @@ const VERTICES: [[f32; 3]; 6] = [
 ];
 
 #[profiling::all_functions]
-impl RenderManager {
-    pub async fn new(window: &winit::window::Window, camera: &CameraInfo) -> Self {
+impl RenderManager<'_> {
+    pub async fn new<'a>(window: &winit::window::Window, camera: &CameraInfo) -> RenderManager<'a> {
         let dxc_path = std::path::PathBuf::from("./shared");
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::DX12,
@@ -83,9 +84,9 @@ impl RenderManager {
         });
 
         let vertex_buffer_layout = wgpu::VertexBufferLayout {
-            array_stride: (std::mem::size_of::<[f32; 3]>() + std::mem::size_of::<u32>()) as _,
+            array_stride: std::mem::size_of::<[f32; 3]>() as _,
             step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Uint32],
+            attributes: &wgpu::vertex_attr_array![0 => Float32x3],
         };
         let bg_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("Bindgroup Layout"),
@@ -104,7 +105,8 @@ impl RenderManager {
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&bg_layout],
+                // bind_group_layouts: &[&bg_layout],
+                bind_group_layouts: &[],
                 push_constant_ranges: &[wgpu::PushConstantRange {
                     stages: wgpu::ShaderStages::VERTEX,
                     range: 0..(std::mem::size_of::<Matrix4>() as u32),
@@ -152,6 +154,7 @@ impl RenderManager {
             },
             pipeline,
             bindgroup: Vec::new(),
+            render_queue: Vec::new(),
         }
     }
 
@@ -161,7 +164,7 @@ impl RenderManager {
     }
 
     #[inline]
-    pub fn tick(&self, render_queue: &Vec<VerticesClip>, camera_mvp: Matrix4) {
+    pub fn tick(&self, camera_mvp: Matrix4) {
         let frame = self.gpu_context.surface.get_current_texture().unwrap();
         let view = frame.texture.create_view(&wgpu::TextureViewDescriptor {
             // format: Some(self.gpu_context.surface_config.view_formats[0]),
@@ -194,13 +197,16 @@ impl RenderManager {
                 0,
                 bytemuck::cast_slice(&[camera_mvp]),
             );
-            for renderable in render_queue.iter() {
+            for renderable in self.render_queue.iter() {
                 // pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
                 // pass.draw(0..6, 0..1);
-                pass.set_vertex_buffer(0, renderable.vertex_buff.slice(..));
-                pass.set_index_buffer(renderable.index_buff.slice(..), wgpu::IndexFormat::Uint32);
-                pass.set_bind_group(0, &self.bindgroup[0], &[]);
-                pass.draw_indexed(0..renderable.indices_len, 0, 0..1);
+                pass.set_vertex_buffer(0, renderable.vertexbuffer.as_ref().unwrap().0.slice(..));
+                pass.set_index_buffer(
+                    renderable.indexbuffer.as_ref().unwrap().0.slice(..),
+                    renderable.indexbuffer.as_ref().unwrap().1,
+                );
+                // pass.set_bind_group(0, &self.bindgroup[0], &[]);
+                pass.draw_indexed(0..renderable.indexbuffer.as_ref().unwrap().2, 0, 0..1);
             }
             // pass.draw_indexed(indices, 0, 0..1);
         }

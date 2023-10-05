@@ -46,7 +46,11 @@ pub struct GltfData {
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub samplers: Vec<GltfSampler>,
     /// The index of the default scene.
-    #[serde(rename = "scene", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "scene",
+        skip_serializing_if = "Option::is_none",
+        default = "default_integer_zero"
+    )]
     pub default_scene: Option<usize>,
     /// An array of scenes.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
@@ -358,7 +362,11 @@ pub struct GltfTextureInfo {
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct GltfAccessor {
     /// The index of the bufferView.
-    #[serde(rename = "bufferView", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "bufferView",
+        skip_serializing_if = "Option::is_none",
+        default = "default_integer_zero"
+    )]
     pub buffer_view: Option<usize>,
     /// The offset relative to the start of the buffer view in bytes.
     #[serde(
@@ -395,21 +403,6 @@ pub struct GltfAccessor {
     pub extras: GltfExtras,
 }
 
-impl GltfAccessor {
-    pub fn process(&self, buffer_views: &[GltfBufferView], bin_data: &[u8]) {
-        let bufferview_index = self.buffer_view.unwrap_or(0);
-        let bufferview_byteoffset = self.byte_offset.unwrap();
-        let accessor_type = &self.accessor_type;
-        let component_type = &self.component_type;
-        let stride = accessor_type.to_length() * component_type.to_typesize();
-
-        let bufferview = &buffer_views[bufferview_index];
-        let buffer_offset = bufferview.byte_offset.unwrap();
-        let bufferview_length = bufferview.byte_length;
-        let bufferview_data = &bin_data[buffer_offset..(buffer_offset + bufferview_length)];
-    }
-}
-
 /// The datatype of the accessor’s components.
 /// UNSIGNED_INT type **MUST NOT** be used for any accessor that is not referenced by `mesh.primitive.indices`.
 /// Related WebGL functions: `type` parameter of `vertexAttribPointer()`.
@@ -439,7 +432,7 @@ impl GltfAccessorComponentType {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
 pub enum GltfAccessorType {
     #[serde(rename = "SCALAR")]
     Scalar,

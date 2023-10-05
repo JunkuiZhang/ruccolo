@@ -107,7 +107,7 @@ pub fn handle_event(
         // Event::Suspended => todo!(),
         // Event::Resumed => todo!(),
         Event::MainEventsCleared => {
-            render_manager.tick(&scene_manager.render_queue, scene_manager.camera.get_mvp());
+            render_manager.tick(scene_manager.camera.get_mvp());
             profiling::finish_frame!();
         }
         // Event::RedrawRequested(_) => todo!(),

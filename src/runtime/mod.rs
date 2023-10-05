@@ -22,6 +22,7 @@ pub fn run() {
     ));
     scene_manager.load_scene(
         &render_manager.gpu_context.device,
+        &mut render_manager.render_queue,
         &mut render_manager.bindgroup,
     );
     let mut fps_manager = fps_manager::FpsManager::new();

@@ -1,4 +1,5 @@
 pub mod gltf;
+pub mod renderable;
 
 use std::{fmt::Debug, io::Read, path::Path};
 
