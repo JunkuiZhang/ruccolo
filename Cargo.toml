@@ -18,7 +18,7 @@ codegen-units = 1
 log = "0.4.20"
 env_logger = "0.10"
 winit = "0.28"
-wgpu = "0.17"
+wgpu = "0.18"
 pollster = "0.3"
 profiling = "1"
 bytemuck = { version = "1", features = ["derive"] }
