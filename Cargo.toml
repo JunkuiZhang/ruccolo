@@ -19,7 +19,7 @@ log = "0.4.22"
 env_logger = "0.11"
 winit = "0.29"
 wgpu = "22.1"
-pollster = "0.3"
+pollster = "0.4"
 profiling = "1"
 bytemuck = { version = "1", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
